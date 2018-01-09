@@ -28,7 +28,10 @@ class LineChart extends Component {
       this.width = 960 - this.margin.left - this.margin.right;
       this.height = 500 - this.margin.top - this.margin.bottom;
       this.parseDate = timeFormat("%d-%b-%y").parse;
-      this.bisectDate = bisector(function(d) { return d[0]; }).left;
+      this.bisectDate = bisector(function(d) { 
+       // console.log(d.close);
+        return d.date; 
+      }).left;
       this.formatValue = format(",.2f");
      //  this.formatCurrency = function(d) { return "$" + formatValue(d); };
   }
@@ -72,15 +75,15 @@ class LineChart extends Component {
   }
 
   drawCircle(){
-      return (<circle r={5}/>)
+      return (<circle r="5"/>)
   }
 
   drawText(){
-      return (<text x={9} dy={0.4}/>)
+      return (<text x="9" dy=".35em"/>)
   }
 
   drawRect(){
-      return (<rect d={this.line(this.state.data)} className="overlay" width={this.props.elementWidth} height={this.props.elementHeight} onMouseOver={()=> this.mouseOver()} onMouseOut={()=> this.mouseOut()} onMouseMove={(e)=> this.mouseMove(e)}  style={{fill: 'none', pointerEvents: 'all'}}/>)
+      return (<rect d={this.line(this.state.data)} className="overlay" width={this.props.elementWidth} height={this.props.elementHeight} onMouseOver={()=> this.mouseOver()} onMouseOut={()=> this.mouseOut()} onMouseMove={(e)=> this.mouseMove(e)}  />)
   }
 
   mouseOver(){
@@ -104,12 +107,15 @@ class LineChart extends Component {
     let i = this.bisectDate(this.state.data, x0, 1);
     let d0 = this.state.data[i - 1];
     let d1 = this.state.data[i];
+    let d = x0 - d0.date > d1.date - x0 ? d1:d0;
 
-    let d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+   
 
-   select(".focus")
+
+    select(".focus")
       .attr("transform", "translate(" + this.x(d.date) + "," + this.y(d.close) + ")")
-      .select("text").text(d.close)
+      .select("text")
+      .text(d.close)
   
   }
 
@@ -146,13 +152,18 @@ class LineChart extends Component {
               <g ref='y' className="y axis">
                   {this.state.data ? this.drawYAxis() : null}
               </g>
+
+              <g className="focus" >
+                      {this.state.data ? this.drawCircle() : null}
+                      {this.state.data ? this.drawText() : null}
+              </g>
+
+
+              
                 {this.state.data ? this.drawRect() : null}
           </g>
 
-          <g className="focus">
-                  {this.state.data ? this.drawCircle() : null}
-                  {this.state.data ? this.drawText() : null}
-          </g>
+
 
       </svg>
     );
