@@ -19,6 +19,13 @@
     stroke-width: 1.5px;
   }
 
+  .line2 {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 0.5px;
+  }
+
+
   .overlay {
     fill: none;
     pointer-events: all;
