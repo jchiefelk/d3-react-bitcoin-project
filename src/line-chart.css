@@ -2,6 +2,18 @@
     font: 10px sans-serif;
   }
 
+  .zoom {
+    cursor: move;
+    fill: none;
+    pointer-events: all;
+  }
+
+
+  .area {
+    fill: steelblue;
+    clip-path: url(#clip);
+  }
+
   .axis path,
   .axis line {
     fill: none;

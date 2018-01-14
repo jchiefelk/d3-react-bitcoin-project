@@ -2,14 +2,15 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import './line-chart.css';
 import { select, event } from 'd3-selection'
-import { selectAll, sourceEvent, clientPoint } from 'd3-selection';
+import { selectAll, sourceEvent, clientPoint} from 'd3-selection';
 import {extent, max, bisector} from 'd3-array'
-import {line} from 'd3-shape'
-import { scaleLinear, scaleTime } from 'd3-scale'
+import {line, curveMonotoneX, area} from 'd3-shape'
+import { scaleLinear, scaleTime,scale } from 'd3-scale'
 import {timeFormat} from 'd3-time-format'
 import {format} from 'd3-format'
 import {axisBottom, axisLeft} from 'd3-axis'
 import {brushX} from 'd3-brush'
+import {zoom, zoomIdentity} from 'd3-zoom'
 //import {mouse as sourceEvent} from 'd3-selection';
 
 class LineChart extends Component {
@@ -22,15 +23,11 @@ class LineChart extends Component {
       this.y = scaleLinear().range([elementHeight - this.margin.top - this.margin.bottom, 0]);
       this.x2 =  scaleTime().range([0, elementWidth - this.margin.left - this.margin.right]);
       this.y2 = scaleLinear().range([150 - this.margin.top - this.margin.bottom, 0]);
-
-
-
       this.elementWidth = elementWidth;
       this.elementHeight = elementHeight;
       this.state = {
           data: null
       };
-
       this.width = 960 - this.margin.left - this.margin.right;
       this.height = 500 - this.margin.top - this.margin.bottom;
       this.parseDate = timeFormat("%d-%b-%y").parse;
@@ -39,7 +36,10 @@ class LineChart extends Component {
         return d.date; 
       }).left;
       this.formatValue = format(",.2f");
-     //  this.formatCurrency = function(d) { return "$" + formatValue(d); };
+      this.state= {
+          brushed: false
+      };
+
   }
 
   componentWillMount(){
@@ -62,6 +62,7 @@ class LineChart extends Component {
 
   componentDidMount(){
     select('.overlay').on("mousemove", this.mouseMove);
+    select('.brush').on("brush end", this.brushed);
   }
 
   get xAxis(){
@@ -103,12 +104,27 @@ class LineChart extends Component {
           .y((d)=> (this.y(d.close)));
   }
 
+  get areaSpace(){
+
+		return area()
+		   	.curve(curveMonotoneX)
+		    .x((d) => (this.x(d.date)) )
+		    .y0(this.props.elementHeight)
+		    .y1((d)=> (this.y(d.close)) );
+
+  }
+
+  areaPath(){
+  	return (<path className="area"  d={this.areaSpace(this.state.data)}  />);
+  }
+
   linePath(){
      return (<path className="line" d={this.line(this.state.data)}/>);
   }
 
   get line2(){
-      return line()
+      
+        return line()
           .x((d)=> (this.x2(d.date)))
           .y((d)=> (this.y2(d.close)));
   }
@@ -117,26 +133,28 @@ class LineChart extends Component {
 
     return brushX()
         .extent([[0, 0], [this.props.elementWidth, 150]])
-        .on("brush end", this.brushed(event));
+        .on("brush", () => {
+           if(event.selection){
+              var s = event.selection || this.x2.range();
+              this.x.domain(s.map(this.x2.invert, this.x2));
+              select('.line')
+                .attr("d", this.line(this.state.data));
+            
+              select(this.refs.x)
+                .call(this.xAxis)
+
+              select(this.refs.y)
+                .call(this.yAxis)
+            }
+        });
+
+ 
   }
 
-  brushed(event) {
-    console.log(event);
-
-    // if (event.sourceEvent && event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
-    
-
-    //var s = event.selection || this.x2.range();
-    //this.x.domain(s.map(this.x2.invert, this.x2));
-    
-    /**
-    focus.select(".area").attr("d", area);
-    focus.select(".axis--x").call(xAxis);
-    svg.select(".zoom").call(zoom.transform, d3.zoomIdentity
-        .scale(width / (s[1] - s[0]))
-        .translate(-s[0], 0));
-    **/
-
+  drawBrush(){
+      select(this.refs.y2)
+        .call(this.brusher)
+        .call(this.brusher.move, this.x2.range());
   }
 
   linePath2(){
@@ -152,7 +170,7 @@ class LineChart extends Component {
   }
 
   drawRect(){
-      return (<rect d={this.line(this.state.data)} className="overlay" width={this.props.elementWidth} height={this.props.elementHeight} onMouseOver={()=> this.mouseOver()} onMouseOut={()=> this.mouseOut()} onMouseMove={(e)=> this.mouseMove(e)}  />)
+      return (<rect d={this.line(this.state.data)} className="overlay" width={this.props.elementWidth} height={this.props.elementHeight} onMouseMove={(e)=> this.mouseMove(e)}  />)
   }
 
   mouseOver(){
@@ -164,14 +182,11 @@ class LineChart extends Component {
   }
 
   mouseMove(e){
-
-    //console.log('Mouse move');
-    //console.log(d3.mouse().event);
+    // console.log('Mouse move');
+    // console.log(d3.mouse().event);
     let overlay = select('.overlay').node();
     //console.log(clientPoint(e.target, e)[0]);
-   //  let x0 = this.x.invert(d3.mouse(overlay));
-
-
+   // let x0 = this.x.invert(d3.mouse(overlay));
     let x0 = this.x.invert(clientPoint(e.target, e)[0])
     let i = this.bisectDate(this.state.data, x0, 1);
     let d0 = this.state.data[i - 1];
@@ -191,31 +206,28 @@ class LineChart extends Component {
     };
     this.x.domain(extent(data, (d)=> d.date) );
     this.y.domain([0, max(data, (d)=> (d.close) )]);
-    
     this.x2.domain(extent(data, (d)=> d.date) );
     this.y2.domain([0, max(data, (d)=> (d.close) )]);
-
-
     this.setState({data: data});
   }
 
 
-  drawBrush(){
-
-    
-      select(this.refs.y2)
-        .call(this.brusher)
-        .call(this.brusher.move, this.x.range())
-  
-  }
-
-
   render() {
+
+    // Need to update line Path
+    // Need to update X & Y Axis
+    // Need to update draw circile, and text
+    // onMouseOver={()=> console.log('mouse mover')} onMouseOut={()=> console.log('mouse out')}
+    // onMouseMove={(e)=> console.log('mouse move')}
+
     return (
       <div style={{display: 'flex', flexDirection: 'column'}}>
       <svg width={this.elementWidth} height={this.elementHeight}>
           <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
-                  {this.state.data ? this.linePath() : null}
+
+
+
+		          {this.state.data ? this.linePath() : null}
               <g ref="x" className="x axis" transform={`translate(0, ${this.elementHeight - this.margin.top - this.margin.bottom})`}>
                   {this.state.data ? this.drawXAxis() : null}
               </g>
@@ -223,17 +235,19 @@ class LineChart extends Component {
                   {this.state.data ? this.drawYAxis() : null}
               </g>
 
+
               <g className="focus" >
                       {this.state.data ? this.drawCircle() : null}
                       {this.state.data ? this.drawText() : null}
               </g>
+                
                 {this.state.data ? this.drawRect() : null}
           </g>
       </svg>
     
 
-        <svg width={this.props.elementWidth} height={150}>
-          <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
+        <svg width={this.props.elementWidth} height={150} >
+          <g transform={`translate(${this.margin.left}, ${this.margin.top})`} onMouseUp={()=> console.log("Drag on")}>
 
               {this.state.data ? this.linePath2() : null}
 
@@ -246,11 +260,9 @@ class LineChart extends Component {
               </g>
 
 
-              <g className="brush" >
-                      {this.state.data ? this.drawBrush(event) : null}
-                      
+              <g className="brush">
+                  {this.state.data ? this.drawBrush() : null}   
               </g>
-
 
           </g>
         </svg>
