@@ -37,7 +37,9 @@ class LineChart extends Component {
       }).left;
       this.formatValue = format(",.2f");
       this.state= {
-          brushed: false
+          brushed: false,
+          width: this.props.elementWidth,
+          height: this.props.elementHeight
       };
 
   }
@@ -61,8 +63,20 @@ class LineChart extends Component {
   }
 
   componentDidMount(){
+    window.addEventListener("resize", this.updateDimensions.bind(this));
     select('.overlay').on("mousemove", this.mouseMove);
     select('.brush').on("brush end", this.brushed);
+  }
+
+
+  componentWillUnmount(){
+     window.removeEventListener("resize", this.updateDimensions.bind(this));
+  }
+
+  updateDimensions() {
+      this.setState({ width: window.innerWidth, height: window.innerHeight });
+      console.log(this.state.width);
+ 
   }
 
   get xAxis(){
@@ -74,12 +88,41 @@ class LineChart extends Component {
   }
 
   drawXAxis(){
-      select(this.refs.x).call(this.xAxis);
+      select(this.refs.x) 
+      .call(this.xAxis)
+      .on('resize', this.resize);
   }
 
   drawYAxis(){
-      select(this.refs.y).call(this.yAxis);
+      select(this.refs.y)
+      .call(this.yAxis)
+      .on('resize', this.resize);
   }
+
+  get resize() {
+    console.log('resizing');
+    this.x = scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
+    this.y = scaleLinear().range([this.state.height - this.margin.top - this.margin.bottom, 0]);
+    this.x2 =  scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
+    this.y2 = scaleLinear().range([this.state.height*0.3 - this.margin.top - this.margin.bottom, 0]);
+    this.x.domain(extent(this.state.data, (d)=> d.date) );
+    this.y.domain([0, max(this.state.data, (d)=> (d.close) )]);
+    this.x2.domain(extent(this.state.data, (d)=> d.date) );
+    this.y2.domain([0, max(this.state.data, (d)=> (d.close) )]);
+
+    select('.line')
+                .attr("d", this.line(this.state.data));
+
+
+/**
+    select('.main')
+        .style('height',this.state.width)
+        .style('width', this.state.height);
+***/
+
+
+
+  } 
 
 
   get xAxis2(){
@@ -91,7 +134,8 @@ class LineChart extends Component {
   }
 
   drawXAxis2(){
-      select(this.refs.x2).call(this.xAxis2);
+      select(this.refs.x2)
+        .call(this.xAxis2);
   }
 
   drawYAxis2(){
@@ -100,22 +144,12 @@ class LineChart extends Component {
 
   get line(){
       return line()
-          .x((d)=> (this.x(d.date)))
-          .y((d)=> (this.y(d.close)));
-  }
-
-  get areaSpace(){
-
-		return area()
-		   	.curve(curveMonotoneX)
-		    .x((d) => (this.x(d.date)) )
-		    .y0(this.props.elementHeight)
-		    .y1((d)=> (this.y(d.close)) );
-
-  }
-
-  areaPath(){
-  	return (<path className="area"  d={this.areaSpace(this.state.data)}  />);
+          .x((d)=> (
+            this.x(d.date)
+            ))
+          .y((d)=> (
+            this.y(d.close)
+            ));
   }
 
   linePath(){
@@ -123,7 +157,6 @@ class LineChart extends Component {
   }
 
   get line2(){
-      
         return line()
           .x((d)=> (this.x2(d.date)))
           .y((d)=> (this.y2(d.close)));
@@ -132,7 +165,7 @@ class LineChart extends Component {
   get brusher(){
 
     return brushX()
-        .extent([[0, 0], [this.props.elementWidth, 150]])
+        .extent([[0, 0], [this.state.width, this.state.height*0.3]])
         .on("brush", () => {
            if(event.selection){
               var s = event.selection || this.x2.range();
@@ -147,8 +180,6 @@ class LineChart extends Component {
                 .call(this.yAxis)
             }
         });
-
- 
   }
 
   drawBrush(){
@@ -170,7 +201,7 @@ class LineChart extends Component {
   }
 
   drawRect(){
-      return (<rect d={this.line(this.state.data)} className="overlay" width={this.props.elementWidth} height={this.props.elementHeight} onMouseMove={(e)=> this.mouseMove(e)}  />)
+      return (<rect d={this.line(this.state.data)} className="overlay" width={this.state.width} height={this.state.height} onMouseMove={(e)=> this.mouseMove(e)}  />)
   }
 
   mouseOver(){
@@ -217,18 +248,16 @@ class LineChart extends Component {
     // Need to update line Path
     // Need to update X & Y Axis
     // Need to update draw circile, and text
-    // onMouseOver={()=> console.log('mouse mover')} onMouseOut={()=> console.log('mouse out')}
-    // onMouseMove={(e)=> console.log('mouse move')}
+    let brushHeight = this.state.height*0.3;
+
 
     return (
       <div style={{display: 'flex', flexDirection: 'column'}}>
-      <svg width={this.elementWidth} height={this.elementHeight}>
+      
+      <svg width={this.state.width} height={this.state.height} className="main">
           <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
-
-
-
 		          {this.state.data ? this.linePath() : null}
-              <g ref="x" className="x axis" transform={`translate(0, ${this.elementHeight - this.margin.top - this.margin.bottom})`}>
+              <g ref="x" className="x axis" transform={`translate(0, ${this.state.height - this.margin.top - this.margin.bottom})`}>
                   {this.state.data ? this.drawXAxis() : null}
               </g>
               <g ref='y' className="y axis">
@@ -246,12 +275,11 @@ class LineChart extends Component {
       </svg>
     
 
-        <svg width={this.props.elementWidth} height={150} >
+        <svg width={this.state.width} height={this.state.height*(0.3)} className="main">
+          
           <g transform={`translate(${this.margin.left}, ${this.margin.top})`} onMouseUp={()=> console.log("Drag on")}>
-
               {this.state.data ? this.linePath2() : null}
-
-              <g ref="x2" className="x axis" transform={`translate(0, ${150 - this.margin.top - this.margin.bottom})`}>
+              <g ref="x2" className="x axis" transform={`translate(0, ${brushHeight - this.margin.top - this.margin.bottom})`}>
                    {this.state.data ? this.drawXAxis2() : null}
               </g>
 
@@ -259,18 +287,16 @@ class LineChart extends Component {
                   {this.state.data ? this.drawYAxis2() : null}
               </g>
 
-
               <g className="brush">
                   {this.state.data ? this.drawBrush() : null}   
               </g>
 
           </g>
+
+
+
         </svg>
 </div>
-
-
-
-
 
     );
   }

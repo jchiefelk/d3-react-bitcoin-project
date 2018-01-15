@@ -4,9 +4,16 @@ import LineChart from './LineChart';
 
 
 
-ReactDOM.render(
 
-  <LineChart elementWidth={600} elementHeight={270} />,
+
+
+
+
+
+
+
+ReactDOM.render(
+  <LineChart elementWidth={window.innerWidth} elementHeight={window.innerHeight} />,
   document.getElementById('root')
 
 );
