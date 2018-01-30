@@ -23,7 +23,7 @@ class LineChart extends Component {
       let {elementWidth, elementHeight} = props;
       this.margin = {top: 30, right: 20, bottom: 30, left: 50};
       this.x = scaleTime().range([0, elementWidth - this.margin.left - this.margin.right]);
-      this.y = scaleLinear().range([elementHeight - this.margin.top - this.margin.bottom, 0]);
+      this.y = scaleLinear().range([elementHeight*0.8 - this.margin.top - this.margin.bottom, 0]);
       this.x2 =  scaleTime().range([0, elementWidth - this.margin.left - this.margin.right]);
       this.y2 = scaleLinear().range([150 - this.margin.top - this.margin.bottom, 0]);
       this.elementWidth = elementWidth;
@@ -53,6 +53,7 @@ class LineChart extends Component {
     })
     .then((response) => typeof response == 'object' ? response.json() : {} )
     .then((responseJson)=>{
+      // console.log(responseJson);
       history_data = responseJson.dataset.data;
       this.dataFromTSV(history_data);
     })
@@ -65,7 +66,7 @@ class LineChart extends Component {
     window.addEventListener("resize", this.updateDimensions.bind(this));
     select('.overlay').on("mousemove", this.mouseMove);
     select('.brush').on("brush end", this.brushed);
-    /**
+      /**
       API.getCrashAnalysis()
       .then((data)=>{
           console.log(data);
@@ -103,11 +104,10 @@ class LineChart extends Component {
   }
 
   get resize() {
-
     this.x = scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
-    this.y = scaleLinear().range([this.state.height - this.margin.top - this.margin.bottom, 0]);
+    this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
     this.x2 =  scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
-    this.y2 = scaleLinear().range([this.state.height*0.3 - this.margin.top - this.margin.bottom, 0]);
+    this.y2 = scaleLinear().range([this.state.height*0.18 - this.margin.top - this.margin.bottom, 0]);
     this.x.domain(extent(this.state.data, (d)=> d.date) );
     this.y.domain([0, max(this.state.data, (d)=> (d.close) )]);
     this.x2.domain(extent(this.state.data, (d)=> d.date) );
@@ -169,11 +169,33 @@ class LineChart extends Component {
               this.x.domain(s.map(this.x2.invert, this.x2));
               let d1 = this.x.domain()[0];
               let d2 = this.x.domain()[1];
-              // console.log(moment(d1).format("l"), moment(d2).format("l"));
-              console.log(this.state.lookup[moment(d1).format("l")], this.state.lookup[moment(d2).format("l")]);
+              // console.log( this.state.lookup[moment(d1).format("l")] );
+             // console.log( this.state.lookup[moment(d1).format("l")] );
+             // console.log( this.state.lookup[moment(d2).format("l")] );
+              // console.log(this.state.data[  this.state.lookup[moment(d1).format("l")] ]);
+              // console.log(this.state.data[  this.state.lookup[moment(d2).format("l")] ]);
+              let y_data = [];
+              let price=[];
+              
+              for(let x=this.state.lookup[moment(d2).format("l")]; x<this.state.lookup[moment(d1).format("l")]; x++){
+                  y_data.push(this.state.data[x]);
+                  price.push(parseFloat(this.state.data[x].close));
+              };
+              
+              console.log(this.state.data[ this.state.lookup[moment(d1).format("l")] ].close);
+              this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
+              // console.log(price);
+              // console.log( this.state.lookup[moment(d2).format("l")] );
+               //console.log(max(y_data, (d)=> (d.close) ));
+              //console.log(Math.max(...price));
+              this.y.domain([0, 19000]);
+              //this.y.domain([0, max(y_data, (d)=> (d.close) )]);
+            
               select('.line')
                 .attr("d", this.line(this.state.data));
             
+
+
               select(this.refs.x)
                 .call(this.xAxis)
 
@@ -208,7 +230,7 @@ class LineChart extends Component {
   }
 
   drawRect(){
-      return (<rect d={this.line(this.state.data)} className="overlay" width={this.state.width} height={this.state.height} onMouseMove={(e)=> this.mouseMove(e)}  />)
+      return (<rect d={this.line(this.state.data)} className="overlay" width={this.state.width} height={this.state.height*0.8} onMouseMove={(e)=> this.mouseMove(e)}  />)
   }
 
   mouseOver(){
@@ -240,10 +262,18 @@ class LineChart extends Component {
   dataFromTSV(history){
     let data = [];
     let obj={};
+    /**
     for(let x=history.length-1; x>=0; x--){
       data.push({close: parseFloat(history[x][4]), date:  new Date(history[x][0]) });
       obj[ moment(new Date(history[x][0])).format("l") ] = x;
     };
+    **/
+    for(let x=0; x<history.length; x++){
+      data.push({close: parseFloat(history[x][4]), date:  new Date(history[x][0]) });
+      obj[ moment(new Date(history[x][0])).format("l") ] = x;
+    };
+
+
     this.x.domain(extent(data, (d)=> d.date) );
     this.y.domain([0, max(data, (d)=> (d.close) )]);
     this.x2.domain(extent(data, (d)=> d.date) );
@@ -261,13 +291,12 @@ class LineChart extends Component {
     // Need to update line Path
     // Need to update X & Y Axis
     // Need to update draw circile, and text
-    let brushHeight = this.state.height*0.3;
-
+    let brushHeight = this.state.height*0.18;
 
     return (
-      <div style={{display: 'flex', flexDirection: 'column'}}>
+      <div >
       
-      <svg width={this.state.width} height={this.state.height} className="main">
+      <svg width={this.state.width} height={this.state.height*0.8} className="main">
           <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
 		          {this.state.data ? this.linePath() : null}
               <g ref="x" className="x axis" transform={`translate(0, ${this.state.height - this.margin.top - this.margin.bottom})`}>
@@ -276,39 +305,31 @@ class LineChart extends Component {
               <g ref='y' className="y axis">
                   {this.state.data ? this.drawYAxis() : null}
               </g>
-
-
               <g className="focus" >
                       {this.state.data ? this.drawCircle() : null}
                       {this.state.data ? this.drawText() : null}
               </g>
-                
                 {this.state.data ? this.drawRect() : null}
           </g>
       </svg>
     
 
-        <svg width={this.state.width} height={this.state.height*(0.3)} className="main">
-          
+        <svg width={this.state.width} height={this.state.height*(0.18)} className="main2">
           <g transform={`translate(${this.margin.left}, ${this.margin.top})`} onMouseUp={()=> console.log("Drag on")}>
               {this.state.data ? this.linePath2() : null}
               <g ref="x2" className="x axis" transform={`translate(0, ${brushHeight - this.margin.top - this.margin.bottom})`}>
                    {this.state.data ? this.drawXAxis2() : null}
               </g>
-
               <g ref='y2' className="y axis">
                   {this.state.data ? this.drawYAxis2() : null}
               </g>
-
               <g className="brush">
                   {this.state.data ? this.drawBrush() : null}   
               </g>
-
           </g>
-
-
-
         </svg>
+
+
 </div>
 
     );

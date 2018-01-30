@@ -39881,7 +39881,7 @@ var LineChart = function (_Component) {
 
         _this.margin = { top: 30, right: 20, bottom: 30, left: 50 };
         _this.x = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
-        _this.y = (0, _d3Scale.scaleLinear)().range([elementHeight - _this.margin.top - _this.margin.bottom, 0]);
+        _this.y = (0, _d3Scale.scaleLinear)().range([elementHeight * 0.8 - _this.margin.top - _this.margin.bottom, 0]);
         _this.x2 = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
         _this.y2 = (0, _d3Scale.scaleLinear)().range([150 - _this.margin.top - _this.margin.bottom, 0]);
         _this.elementWidth = elementWidth;
@@ -39916,6 +39916,7 @@ var LineChart = function (_Component) {
             }).then(function (response) {
                 return (typeof response === 'undefined' ? 'undefined' : _typeof(response)) == 'object' ? response.json() : {};
             }).then(function (responseJson) {
+                // console.log(responseJson);
                 history_data = responseJson.dataset.data;
                 _this2.dataFromTSV(history_data);
             }).catch(function (err) {
@@ -39929,11 +39930,11 @@ var LineChart = function (_Component) {
             (0, _d3Selection.select)('.overlay').on("mousemove", this.mouseMove);
             (0, _d3Selection.select)('.brush').on("brush end", this.brushed);
             /**
-              API.getCrashAnalysis()
-              .then((data)=>{
-                  console.log(data);
-              })
-              ***/
+            API.getCrashAnalysis()
+            .then((data)=>{
+                console.log(data);
+            })
+            ***/
         }
     }, {
         key: 'componentWillUnmount',
@@ -40000,7 +40001,7 @@ var LineChart = function (_Component) {
         value: function drawRect() {
             var _this3 = this;
 
-            return _react2.default.createElement('rect', { d: this.line(this.state.data), className: 'overlay', width: this.state.width, height: this.state.height, onMouseMove: function onMouseMove(e) {
+            return _react2.default.createElement('rect', { d: this.line(this.state.data), className: 'overlay', width: this.state.width, height: this.state.height * 0.8, onMouseMove: function onMouseMove(e) {
                     return _this3.mouseMove(e);
                 } });
         }
@@ -40030,10 +40031,17 @@ var LineChart = function (_Component) {
         value: function dataFromTSV(history) {
             var data = [];
             var obj = {};
-            for (var x = history.length - 1; x >= 0; x--) {
+            /**
+            for(let x=history.length-1; x>=0; x--){
+              data.push({close: parseFloat(history[x][4]), date:  new Date(history[x][0]) });
+              obj[ moment(new Date(history[x][0])).format("l") ] = x;
+            };
+            **/
+            for (var x = 0; x < history.length; x++) {
                 data.push({ close: parseFloat(history[x][4]), date: new Date(history[x][0]) });
                 obj[(0, _moment2.default)(new Date(history[x][0])).format("l")] = x;
             };
+
             this.x.domain((0, _d3Array.extent)(data, function (d) {
                 return d.date;
             }));
@@ -40059,14 +40067,14 @@ var LineChart = function (_Component) {
             // Need to update line Path
             // Need to update X & Y Axis
             // Need to update draw circile, and text
-            var brushHeight = this.state.height * 0.3;
+            var brushHeight = this.state.height * 0.18;
 
             return _react2.default.createElement(
                 'div',
-                { style: { display: 'flex', flexDirection: 'column' } },
+                null,
                 _react2.default.createElement(
                     'svg',
-                    { width: this.state.width, height: this.state.height, className: 'main' },
+                    { width: this.state.width, height: this.state.height * 0.8, className: 'main' },
                     _react2.default.createElement(
                         'g',
                         { transform: 'translate(' + this.margin.left + ', ' + this.margin.top + ')' },
@@ -40092,7 +40100,7 @@ var LineChart = function (_Component) {
                 ),
                 _react2.default.createElement(
                     'svg',
-                    { width: this.state.width, height: this.state.height * 0.3, className: 'main' },
+                    { width: this.state.width, height: this.state.height * 0.18, className: 'main2' },
                     _react2.default.createElement(
                         'g',
                         { transform: 'translate(' + this.margin.left + ', ' + this.margin.top + ')', onMouseUp: function onMouseUp() {
@@ -40131,11 +40139,10 @@ var LineChart = function (_Component) {
     }, {
         key: 'resize',
         get: function get() {
-
             this.x = (0, _d3Scale.scaleTime)().range([0, this.state.width - this.margin.left - this.margin.right]);
-            this.y = (0, _d3Scale.scaleLinear)().range([this.state.height - this.margin.top - this.margin.bottom, 0]);
+            this.y = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.8 - this.margin.top - this.margin.bottom, 0]);
             this.x2 = (0, _d3Scale.scaleTime)().range([0, this.state.width - this.margin.left - this.margin.right]);
-            this.y2 = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.3 - this.margin.top - this.margin.bottom, 0]);
+            this.y2 = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.18 - this.margin.top - this.margin.bottom, 0]);
             this.x.domain((0, _d3Array.extent)(this.state.data, function (d) {
                 return d.date;
             }));
@@ -40198,8 +40205,28 @@ var LineChart = function (_Component) {
                     _this6.x.domain(s.map(_this6.x2.invert, _this6.x2));
                     var d1 = _this6.x.domain()[0];
                     var d2 = _this6.x.domain()[1];
-                    // console.log(moment(d1).format("l"), moment(d2).format("l"));
-                    console.log(_this6.state.lookup[(0, _moment2.default)(d1).format("l")], _this6.state.lookup[(0, _moment2.default)(d2).format("l")]);
+                    // console.log( this.state.lookup[moment(d1).format("l")] );
+                    // console.log( this.state.lookup[moment(d1).format("l")] );
+                    // console.log( this.state.lookup[moment(d2).format("l")] );
+                    // console.log(this.state.data[  this.state.lookup[moment(d1).format("l")] ]);
+                    // console.log(this.state.data[  this.state.lookup[moment(d2).format("l")] ]);
+                    var y_data = [];
+                    var price = [];
+
+                    for (var x = _this6.state.lookup[(0, _moment2.default)(d2).format("l")]; x < _this6.state.lookup[(0, _moment2.default)(d1).format("l")]; x++) {
+                        y_data.push(_this6.state.data[x]);
+                        price.push(parseFloat(_this6.state.data[x].close));
+                    };
+
+                    console.log(_this6.state.data[_this6.state.lookup[(0, _moment2.default)(d1).format("l")]].close);
+                    _this6.y = (0, _d3Scale.scaleLinear)().range([_this6.state.height * 0.8 - _this6.margin.top - _this6.margin.bottom, 0]);
+                    // console.log(price);
+                    // console.log( this.state.lookup[moment(d2).format("l")] );
+                    //console.log(max(y_data, (d)=> (d.close) ));
+                    //console.log(Math.max(...price));
+                    _this6.y.domain([0, 19000]);
+                    //this.y.domain([0, max(y_data, (d)=> (d.close) )]);
+
                     (0, _d3Selection.select)('.line').attr("d", _this6.line(_this6.state.data));
 
                     (0, _d3Selection.select)(_this6.refs.x).call(_this6.xAxis);
@@ -40910,7 +40937,7 @@ exports = module.exports = __webpack_require__(264)(undefined);
 
 
 // module
-exports.push([module.i, "  body {\n    font: 10px sans-serif;\n  }\n\n.main {\n\n}\n\n  .zoom {\n    cursor: move;\n    fill: none;\n    pointer-events: all;\n  }\n\n\n  .area {\n    fill: steelblue;\n    clip-path: url(#clip);\n  }\n\n  .axis path,\n  .axis line {\n    fill: none;\n    stroke: #000;\n    shape-rendering: crispEdges;\n  }\n\n  .x.axis path {\n    display: none;\n  }\n\n  .line {\n    fill: none;\n    stroke: steelblue;\n    stroke-width: 1.5px;\n  }\n\n  .line2 {\n    fill: none;\n    stroke: steelblue;\n    stroke-width: 0.5px;\n  }\n\n\n  .overlay {\n    fill: none;\n    pointer-events: all;\n  }\n\n  .focus circle {\n    fill: none;\n    stroke: steelblue;\n  }", ""]);
+exports.push([module.i, "  body {\n    font: 10px sans-serif;\n  }\n\n.main {\n\n\n}\n\n.main2 {\n\n\n}\n\n\n  .zoom {\n    cursor: move;\n    fill: none;\n    pointer-events: all;\n  }\n\n\n  .area {\n    fill: steelblue;\n    clip-path: url(#clip);\n  }\n\n  .axis path,\n  .axis line {\n    fill: none;\n    stroke: #000;\n    shape-rendering: crispEdges;\n  }\n\n  .x.axis path {\n    display: none;\n  }\n\n  .line {\n    fill: none;\n    stroke: steelblue;\n    stroke-width: 1.5px;\n  }\n\n  .line2 {\n    fill: none;\n    stroke: steelblue;\n    stroke-width: 0.5px;\n  }\n\n\n  .overlay {\n    fill: none;\n    pointer-events: all;\n  }\n\n  .focus circle {\n    fill: none;\n    stroke: steelblue;\n  }", ""]);
 
 // exports
 
