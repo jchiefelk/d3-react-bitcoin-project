@@ -177,24 +177,36 @@ class LineChart extends Component {
               let y_data = [];
               let price=[];
               
-              for(let x=this.state.lookup[moment(d2).format("l")]; x<this.state.lookup[moment(d1).format("l")]; x++){
-                  y_data.push(this.state.data[x]);
+              // console.log( this.state.lookup[moment(d1).format("l")] , this.state.lookup[moment(d2).format("l")] );
+
+
+              for(let x=this.state.data.length-this.state.lookup[moment(d1).format("l")]-1; x<=this.state.data.length-this.state.lookup[moment(d2).format("l")]-1; x++){
+                  // y_data.push(this.state.data[x]);
                   price.push(parseFloat(this.state.data[x].close));
               };
               
-              console.log(this.state.data[ this.state.lookup[moment(d1).format("l")] ].close);
+
+
+
+              //console.log( this.state.data.length-this.state.lookup[moment(d1).format("l")]-1);
+
+              // console.log(  this.state.data[ this.state.data.length-this.state.lookup[moment(d2).format("l")]-1  ]);
+
               this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
               // console.log(price);
               // console.log( this.state.lookup[moment(d2).format("l")] );
                //console.log(max(y_data, (d)=> (d.close) ));
-              //console.log(Math.max(...price));
-              this.y.domain([0, 19000]);
+              // console.log(Math.max(...price));
+              // this.y.domain([0, 19000]);
               //this.y.domain([0, max(y_data, (d)=> (d.close) )]);
-            
-              select('.line')
+              this.y.domain([0, Math.max(...price) ]);
+
+
+             select('.line')
                 .attr("d", this.line(this.state.data));
             
-
+             select('.overlay')
+                .attr("d", this.line(this.state.data));
 
               select(this.refs.x)
                 .call(this.xAxis)
@@ -251,12 +263,12 @@ class LineChart extends Component {
     let i = this.bisectDate(this.state.data, x0, 1);
     let d0 = this.state.data[i - 1];
     let d1 = this.state.data[i];
-    let d = x0 - d0.date > d1.date - x0 ? d1:d0;
+    let d = x0 - d0.date > d1.date - x0 ? d1:d0;   
     select(".focus")
       .attr("transform", "translate(" + this.x(d.date) + "," + this.y(d.close) + ")")
       .select("text")
       .text(d.close)
-  
+    
   }
 
   dataFromTSV(history){
@@ -268,12 +280,10 @@ class LineChart extends Component {
       obj[ moment(new Date(history[x][0])).format("l") ] = x;
     };
     **/
-    for(let x=0; x<history.length; x++){
+    for(let x=history.length-1; x>=0; x--){
       data.push({close: parseFloat(history[x][4]), date:  new Date(history[x][0]) });
       obj[ moment(new Date(history[x][0])).format("l") ] = x;
     };
-
-
     this.x.domain(extent(data, (d)=> d.date) );
     this.y.domain([0, max(data, (d)=> (d.close) )]);
     this.x2.domain(extent(data, (d)=> d.date) );

@@ -40037,11 +40037,10 @@ var LineChart = function (_Component) {
               obj[ moment(new Date(history[x][0])).format("l") ] = x;
             };
             **/
-            for (var x = 0; x < history.length; x++) {
+            for (var x = history.length - 1; x >= 0; x--) {
                 data.push({ close: parseFloat(history[x][4]), date: new Date(history[x][0]) });
                 obj[(0, _moment2.default)(new Date(history[x][0])).format("l")] = x;
             };
-
             this.x.domain((0, _d3Array.extent)(data, function (d) {
                 return d.date;
             }));
@@ -40213,21 +40212,30 @@ var LineChart = function (_Component) {
                     var y_data = [];
                     var price = [];
 
-                    for (var x = _this6.state.lookup[(0, _moment2.default)(d2).format("l")]; x < _this6.state.lookup[(0, _moment2.default)(d1).format("l")]; x++) {
-                        y_data.push(_this6.state.data[x]);
+                    // console.log( this.state.lookup[moment(d1).format("l")] , this.state.lookup[moment(d2).format("l")] );
+
+
+                    for (var x = _this6.state.data.length - _this6.state.lookup[(0, _moment2.default)(d1).format("l")] - 1; x <= _this6.state.data.length - _this6.state.lookup[(0, _moment2.default)(d2).format("l")] - 1; x++) {
+                        // y_data.push(this.state.data[x]);
                         price.push(parseFloat(_this6.state.data[x].close));
                     };
 
-                    console.log(_this6.state.data[_this6.state.lookup[(0, _moment2.default)(d1).format("l")]].close);
+                    //console.log( this.state.data.length-this.state.lookup[moment(d1).format("l")]-1);
+
+                    // console.log(  this.state.data[ this.state.data.length-this.state.lookup[moment(d2).format("l")]-1  ]);
+
                     _this6.y = (0, _d3Scale.scaleLinear)().range([_this6.state.height * 0.8 - _this6.margin.top - _this6.margin.bottom, 0]);
                     // console.log(price);
                     // console.log( this.state.lookup[moment(d2).format("l")] );
                     //console.log(max(y_data, (d)=> (d.close) ));
-                    //console.log(Math.max(...price));
-                    _this6.y.domain([0, 19000]);
+                    // console.log(Math.max(...price));
+                    // this.y.domain([0, 19000]);
                     //this.y.domain([0, max(y_data, (d)=> (d.close) )]);
+                    _this6.y.domain([0, Math.max.apply(Math, price)]);
 
                     (0, _d3Selection.select)('.line').attr("d", _this6.line(_this6.state.data));
+
+                    (0, _d3Selection.select)('.overlay').attr("d", _this6.line(_this6.state.data));
 
                     (0, _d3Selection.select)(_this6.refs.x).call(_this6.xAxis);
 
