@@ -3,23 +3,44 @@ const path = require('path');
 const fetch = require('node-fetch');
 const app = express();
 let Correlation = require('./correlation');
-app.set('port',process.env.PORT || 3000);
+var bodyParser = require('body-parser');
+
+
+
+
+// Required for POST Requests
+// app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(bodyParser.json());
+
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
+
+// Set Port
+app.set('port', (process.env.PORT || 3000));
+
 app.use(express.static(path.resolve(__dirname,'./','bundle')));
-app.get('*',(req,res)=>{
-	res.sendFile(path.resolve(__dirname,'./','bundle'));
+
+
+
+app.post('/api', function(req,res){
+
+  	console.log('post post');
+  	// console.log(req.body);
+  	Correlation.quandl_autocorrelation(req.body)
+  		.then((results)=>{
+  	
+			res.json({autocorrdata: results}); 
+		})
+		.catch((err)=>{
+			console.log(err);
+			res.json({error: error});
+			next(error);
+		})
+
 });
 
-let entire_history = {
-	'one': 'https://www.quandl.com/api/v3/datasets/BCHARTS/BITSTAMPUSD.json?api_key=oaWPkjrfz_aQmyPmE-WT'
-};
 
-let data = {
-	'one': {
-		history: null,
-		correlation: null
-	}
-};
-
+/**
 app.get('/api', function(req,res){  
 	fetch('https://www.quandl.com/api/v3/datasets/BCHARTS/BITSTAMPUSD.json?api_key=oaWPkjrfz_aQmyPmE-WT',{
 		method: 'get',
@@ -40,6 +61,7 @@ app.get('/api', function(req,res){
 		next(error);
 	})  
 });
+***/
 
 app.get('/history', function(req,res){
 	fetch('https://www.quandl.com/api/v3/datasets/BCHARTS/BITSTAMPUSD.json?api_key=oaWPkjrfz_aQmyPmE-WT',{
@@ -49,7 +71,7 @@ app.get('/history', function(req,res){
     .then((response) => typeof response == 'object' ? response.json() : {} )
     .then((responseJson)=>{
       // console.log(responseJson);
-      res.json({correlation_data: responseJson.dataset.data});
+      res.json({historical_data: responseJson.dataset.data});
       // this.dataFromTSV(history_data);
     })
     .catch((err)=>{
@@ -57,6 +79,11 @@ app.get('/history', function(req,res){
       res.json({error: error});
       next(err);
     });
+});
+
+
+app.get('*',(req,res)=>{
+	res.sendFile(path.resolve(__dirname,'./','bundle'));
 });
 
 

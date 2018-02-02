@@ -9,13 +9,21 @@ class BitcoinInfo {
 
 	constructor(){
     this.status = {success: false, message: "first load"};
+    this.history=null;
+    this.autocorrelation=null;
 	}
 
 	setHistory(item){
-    console.log('store updating history');
-    console.log(item);
+
 		this.history = item;
 	}
+
+  setAutocorrelation(item) {
+    this.autocorrelation = item;
+    console.log(this.autocorrelation);
+  }
+
+
 
 };
 
@@ -41,10 +49,13 @@ AppDispatcher.register(function(payload){
   var action = payload.action;
   switch(action.actionType){
     case appConstants.BITCOIN_HISTORY:
-
-      // console.log(action);
-      Bitcoin.setHistory(action.data.correlation_data);
+      Bitcoin.setHistory(action.data.historical_data);
       GeneralStore.emitChange(CHANGE_EVENT);
+      break;
+    case appConstants.PRICE_AUTOCORR:
+      // console.log(action.data);
+      Bitcoin.setAutocorrelation(action.data);
+      // GeneralStore.emitChange(CHANGE_EVENT);
       break;
     default:
       return true;

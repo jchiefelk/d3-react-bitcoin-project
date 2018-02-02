@@ -1,8 +1,5 @@
 var Actions = require('./actions/actions');
 
-
-
-
 class API {
 	
 
@@ -18,8 +15,28 @@ class API {
 
 	}
 
-	getCorrelationData(){
+	getCorrelationData(data){
 
+		let obj= {
+			data: data
+		};
+	
+		return fetch('/api', {
+            method: 'post',
+            mode: 'cors',
+            headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(obj)
+		})
+		.then((response) => {return response.json()} )
+		.then((data)=> {
+		 // console.log(data.autocorrdata);
+		 Actions.updateAutocorrelation(data.autocorrdata);
+
+		})
+		.catch((err)=> {console.log(err)});
 	}
 
 	getHistoricalData() {

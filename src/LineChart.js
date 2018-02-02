@@ -30,9 +30,7 @@ class LineChart extends Component {
       this.y2 = scaleLinear().range([150 - this.margin.top - this.margin.bottom, 0]);
       this.elementWidth = elementWidth;
       this.elementHeight = elementHeight;
-      this.state = {
-          data: null
-      };
+
       this.width = 960 - this.margin.left - this.margin.right;
       this.height = 500 - this.margin.top - this.margin.bottom;
       this.parseDate = timeFormat("%d-%b-%y").parse;
@@ -40,10 +38,12 @@ class LineChart extends Component {
         return d.date; 
       }).left;
       this.formatValue = format(",.2f");
-      this.state= {
+      this.state={
           brushed: false,
           width: this.props.elementWidth,
-          height: this.props.elementHeight
+          height: this.props.elementHeight,
+          data: null,
+          componentUpdated: false
       };
   }
 
@@ -53,6 +53,7 @@ class LineChart extends Component {
     select('.brush').on("brush end", this.brushed);
     GeneralStore.addChangeListener(this._onChange.bind(this));
     API.getHistoricalData();
+ 
   }
 
   componentWillUnmount(){
@@ -61,11 +62,14 @@ class LineChart extends Component {
   }
   
   _onChange(){
-     this.dataFromTSV(GeneralStore.getHistory());
+      this.dataFromTSV(GeneralStore.getHistory());
   }
 
   updateDimensions() {
-      this.setState({ width: window.innerWidth, height: window.innerHeight });
+      this.setState({ 
+        width: window.innerWidth, 
+        height: window.innerHeight 
+      });
   }
 
   get xAxis(){
@@ -140,13 +144,8 @@ class LineChart extends Component {
 
 
   autoCorrelation(d){
-    console.log('testing testing');
-    /**
-    API.getCrashAnalysis(d)
-      .then((data)=>{
-          console.log(data);
-      })
-      ***/
+    //console.log('testing testing');
+    API.getCorrelationData(d);
   }
 
 
@@ -173,12 +172,16 @@ class LineChart extends Component {
               // console.log(this.state.data[  this.state.lookup[moment(d2).format("l")] ]);
               let y_data = [];
               let price=[];
-              this.autoCorrelation();
+              
               // console.log( this.state.lookup[moment(d1).format("l")] , this.state.lookup[moment(d2).format("l")] );
               for(let x=this.state.data.length-this.state.lookup[moment(d1).format("l")]-1; x<=this.state.data.length-this.state.lookup[moment(d2).format("l")]-1; x++){
-                  // y_data.push(this.state.data[x]);
+                  y_data.push(this.state.data[x]);
                   price.push(parseFloat(this.state.data[x].close));
               };
+
+              this.autoCorrelation(y_data);
+
+
               // console.log( this.state.data.length-this.state.lookup[moment(d1).format("l")]-1);
               // console.log(  this.state.data[ this.state.data.length-this.state.lookup[moment(d2).format("l")]-1  ]);
              this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
@@ -274,25 +277,22 @@ class LineChart extends Component {
       data.push({close: parseFloat(dat[x][4]), date:  new Date(dat[x][0]) });
       obj[ moment(new Date(dat[x][0])).format("l") ] = x;
     };
-
-
-
-
-
+    // API.getCorrelationData(data);
     this.x.domain(extent(data, (d)=> d.date) );
     this.y.domain([0, max(data, (d)=> (d.close) )]);
     this.x2.domain(extent(data, (d)=> d.date) );
     this.y2.domain([0, max(data, (d)=> (d.close) )]);
-
     this.setState({
       data: data,
       lookup: obj
     });
+    API.getCorrelationData(data);
+
   }
 
 
   render() {
-
+    // this.dataFromTSV(GeneralStore.getHistory());
     // Need to update line Path
     // Need to update X & Y Axis
     // Need to update draw circile, and text

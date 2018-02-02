@@ -22526,7 +22526,8 @@ module.exports = AppDispatcher;
 
 var appConstants = {
   HTTPSTATUS: "HTTPSTATUS",
-  BITCOIN_HISTORY: "BITCOIN_HISTORY"
+  BITCOIN_HISTORY: "BITCOIN_HISTORY",
+  PRICE_AUTOCORR: "PRICE_AUTOCORR"
 };
 module.exports = appConstants;
 
@@ -39918,9 +39919,7 @@ var LineChart = function (_Component) {
         _this.y2 = (0, _d3Scale.scaleLinear)().range([150 - _this.margin.top - _this.margin.bottom, 0]);
         _this.elementWidth = elementWidth;
         _this.elementHeight = elementHeight;
-        _this.state = {
-            data: null
-        };
+
         _this.width = 960 - _this.margin.left - _this.margin.right;
         _this.height = 500 - _this.margin.top - _this.margin.bottom;
         _this.parseDate = (0, _d3TimeFormat.timeFormat)("%d-%b-%y").parse;
@@ -39931,7 +39930,9 @@ var LineChart = function (_Component) {
         _this.state = {
             brushed: false,
             width: _this.props.elementWidth,
-            height: _this.props.elementHeight
+            height: _this.props.elementHeight,
+            data: null,
+            componentUpdated: false
         };
         return _this;
     }
@@ -39959,7 +39960,10 @@ var LineChart = function (_Component) {
     }, {
         key: 'updateDimensions',
         value: function updateDimensions() {
-            this.setState({ width: window.innerWidth, height: window.innerHeight });
+            this.setState({
+                width: window.innerWidth,
+                height: window.innerHeight
+            });
         }
     }, {
         key: 'drawXAxis',
@@ -39989,13 +39993,8 @@ var LineChart = function (_Component) {
     }, {
         key: 'autoCorrelation',
         value: function autoCorrelation(d) {
-            console.log('testing testing');
-            /**
-            API.getCrashAnalysis(d)
-              .then((data)=>{
-                  console.log(data);
-              })
-              ***/
+            //console.log('testing testing');
+            API.getCorrelationData(d);
         }
     }, {
         key: 'drawBrush',
@@ -40070,7 +40069,7 @@ var LineChart = function (_Component) {
                 data.push({ close: parseFloat(dat[x][4]), date: new Date(dat[x][0]) });
                 obj[(0, _moment2.default)(new Date(dat[x][0])).format("l")] = x;
             };
-
+            // API.getCorrelationData(data);
             this.x.domain((0, _d3Array.extent)(data, function (d) {
                 return d.date;
             }));
@@ -40083,16 +40082,16 @@ var LineChart = function (_Component) {
             this.y2.domain([0, (0, _d3Array.max)(data, function (d) {
                 return d.close;
             })]);
-
             this.setState({
                 data: data,
                 lookup: obj
             });
+            API.getCorrelationData(data);
         }
     }, {
         key: 'render',
         value: function render() {
-
+            // this.dataFromTSV(GeneralStore.getHistory());
             // Need to update line Path
             // Need to update X & Y Axis
             // Need to update draw circile, and text
@@ -40241,12 +40240,15 @@ var LineChart = function (_Component) {
                     // console.log(this.state.data[  this.state.lookup[moment(d2).format("l")] ]);
                     var y_data = [];
                     var price = [];
-                    _this5.autoCorrelation();
+
                     // console.log( this.state.lookup[moment(d1).format("l")] , this.state.lookup[moment(d2).format("l")] );
                     for (var x = _this5.state.data.length - _this5.state.lookup[(0, _moment2.default)(d1).format("l")] - 1; x <= _this5.state.data.length - _this5.state.lookup[(0, _moment2.default)(d2).format("l")] - 1; x++) {
-                        // y_data.push(this.state.data[x]);
+                        y_data.push(_this5.state.data[x]);
                         price.push(parseFloat(_this5.state.data[x].close));
                     };
+
+                    _this5.autoCorrelation(y_data);
+
                     // console.log( this.state.data.length-this.state.lookup[moment(d1).format("l")]-1);
                     // console.log(  this.state.data[ this.state.data.length-this.state.lookup[moment(d2).format("l")]-1  ]);
                     _this5.y = (0, _d3Scale.scaleLinear)().range([_this5.state.height * 0.8 - _this5.margin.top - _this5.margin.bottom, 0]);
@@ -49747,7 +49749,29 @@ var API = function () {
 		}
 	}, {
 		key: 'getCorrelationData',
-		value: function getCorrelationData() {}
+		value: function getCorrelationData(data) {
+
+			var obj = {
+				data: data
+			};
+
+			return fetch('/api', {
+				method: 'post',
+				mode: 'cors',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(obj)
+			}).then(function (response) {
+				return response.json();
+			}).then(function (data) {
+				// console.log(data.autocorrdata);
+				Actions.updateAutocorrelation(data.autocorrdata);
+			}).catch(function (err) {
+				console.log(err);
+			});
+		}
 	}, {
 		key: 'getHistoricalData',
 		value: function getHistoricalData() {
@@ -49786,10 +49810,15 @@ var Actions = {
 
   updateHistoricalData: function updateHistoricalData(item) {
 
-    console.log(item);
-
     AppDispatcher.handleAction({
       actionType: appConstants.BITCOIN_HISTORY,
+      data: item
+    });
+  },
+
+  updateAutocorrelation: function updateAutocorrelation(item) {
+    AppDispatcher.handleAction({
+      actionType: appConstants.PRICE_AUTOCORR,
       data: item
     });
   }
@@ -50074,14 +50103,21 @@ var BitcoinInfo = function () {
     _classCallCheck(this, BitcoinInfo);
 
     this.status = { success: false, message: "first load" };
+    this.history = null;
+    this.autocorrelation = null;
   }
 
   _createClass(BitcoinInfo, [{
     key: 'setHistory',
     value: function setHistory(item) {
-      console.log('store updating history');
-      console.log(item);
+
       this.history = item;
+    }
+  }, {
+    key: 'setAutocorrelation',
+    value: function setAutocorrelation(item) {
+      this.autocorrelation = item;
+      console.log(this.autocorrelation);
     }
   }]);
 
@@ -50112,10 +50148,13 @@ AppDispatcher.register(function (payload) {
   var action = payload.action;
   switch (action.actionType) {
     case appConstants.BITCOIN_HISTORY:
-
-      // console.log(action);
-      Bitcoin.setHistory(action.data.correlation_data);
+      Bitcoin.setHistory(action.data.historical_data);
       GeneralStore.emitChange(CHANGE_EVENT);
+      break;
+    case appConstants.PRICE_AUTOCORR:
+      // console.log(action.data);
+      Bitcoin.setAutocorrelation(action.data);
+      // GeneralStore.emitChange(CHANGE_EVENT);
       break;
     default:
       return true;
