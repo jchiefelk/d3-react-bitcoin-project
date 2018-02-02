@@ -41,6 +41,24 @@ app.get('/api', function(req,res){
 	})  
 });
 
+app.get('/history', function(req,res){
+	fetch('https://www.quandl.com/api/v3/datasets/BCHARTS/BITSTAMPUSD.json?api_key=oaWPkjrfz_aQmyPmE-WT',{
+      method: 'get',
+      mode: 'cors'
+    })
+    .then((response) => typeof response == 'object' ? response.json() : {} )
+    .then((responseJson)=>{
+      // console.log(responseJson);
+      res.json({correlation_data: responseJson.dataset.data});
+      // this.dataFromTSV(history_data);
+    })
+    .catch((err)=>{
+      console.log(err);
+      res.json({error: error});
+      next(err);
+    });
+});
+
 
 app.listen(app.get('port'), ()=>{
 	console.log(`Find the server at: http://localhost:${app.get('port')}/`); // eslint-disable-line no-console

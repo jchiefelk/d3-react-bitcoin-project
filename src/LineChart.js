@@ -13,7 +13,9 @@ import {brushX, brushY, brush} from 'd3-brush'
 import {zoom, zoomIdentity} from 'd3-zoom'
 //import {mouse as sourceEvent} from 'd3-selection';
 var API = require('./api_utls');
-import moment from 'moment'
+import moment from 'moment';
+var GeneralStore = require('./stores/generalstore');
+
 
 
 class LineChart extends Component {
@@ -45,38 +47,21 @@ class LineChart extends Component {
       };
   }
 
-  componentWillMount(){
-    let history_data = null;
-    fetch('https://www.quandl.com/api/v3/datasets/BCHARTS/BITSTAMPUSD.json?api_key=oaWPkjrfz_aQmyPmE-WT',{
-      method: 'get',
-      mode: 'cors'
-    })
-    .then((response) => typeof response == 'object' ? response.json() : {} )
-    .then((responseJson)=>{
-      // console.log(responseJson);
-      history_data = responseJson.dataset.data;
-      this.dataFromTSV(history_data);
-    })
-    .catch((err)=>{
-      console.log(err);
-    });
-  }
-
   componentDidMount(){
     window.addEventListener("resize", this.updateDimensions.bind(this));
     select('.overlay').on("mousemove", this.mouseMove);
     select('.brush').on("brush end", this.brushed);
-      /**
-      API.getCrashAnalysis()
-      .then((data)=>{
-          console.log(data);
-      })
-      ***/
+    GeneralStore.addChangeListener(this._onChange.bind(this));
+    API.getHistoricalData();
   }
-
 
   componentWillUnmount(){
      window.removeEventListener("resize", this.updateDimensions.bind(this));
+     GeneralStore.removeChangeListener(this._onChange.bind(this));
+  }
+  
+  _onChange(){
+     this.dataFromTSV(GeneralStore.getHistory());
   }
 
   updateDimensions() {
@@ -153,6 +138,18 @@ class LineChart extends Component {
      return (<path className="line" d={this.line(this.state.data)}/>);
   }
 
+
+  autoCorrelation(d){
+    console.log('testing testing');
+    /**
+    API.getCrashAnalysis(d)
+      .then((data)=>{
+          console.log(data);
+      })
+      ***/
+  }
+
+
   get line2(){
         return line()
           .x((d)=> (this.x2(d.date)))
@@ -170,38 +167,28 @@ class LineChart extends Component {
               let d1 = this.x.domain()[0];
               let d2 = this.x.domain()[1];
               // console.log( this.state.lookup[moment(d1).format("l")] );
-             // console.log( this.state.lookup[moment(d1).format("l")] );
-             // console.log( this.state.lookup[moment(d2).format("l")] );
+              // console.log( this.state.lookup[moment(d1).format("l")] );
+              // console.log( this.state.lookup[moment(d2).format("l")] );
               // console.log(this.state.data[  this.state.lookup[moment(d1).format("l")] ]);
               // console.log(this.state.data[  this.state.lookup[moment(d2).format("l")] ]);
               let y_data = [];
               let price=[];
-              
+              this.autoCorrelation();
               // console.log( this.state.lookup[moment(d1).format("l")] , this.state.lookup[moment(d2).format("l")] );
-
-
               for(let x=this.state.data.length-this.state.lookup[moment(d1).format("l")]-1; x<=this.state.data.length-this.state.lookup[moment(d2).format("l")]-1; x++){
                   // y_data.push(this.state.data[x]);
                   price.push(parseFloat(this.state.data[x].close));
               };
-              
-
-
-
-              //console.log( this.state.data.length-this.state.lookup[moment(d1).format("l")]-1);
-
+              // console.log( this.state.data.length-this.state.lookup[moment(d1).format("l")]-1);
               // console.log(  this.state.data[ this.state.data.length-this.state.lookup[moment(d2).format("l")]-1  ]);
-
-              this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
+             this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
               // console.log(price);
               // console.log( this.state.lookup[moment(d2).format("l")] );
-               //console.log(max(y_data, (d)=> (d.close) ));
+              // console.log(max(y_data, (d)=> (d.close) ));
               // console.log(Math.max(...price));
               // this.y.domain([0, 19000]);
-              //this.y.domain([0, max(y_data, (d)=> (d.close) )]);
-              this.y.domain([0, Math.max(...price) ]);
-
-
+              // this.y.domain([0, max(y_data, (d)=> (d.close) )]);
+             this.y.domain([0, Math.max(...price) ]);
              select('.line')
                 .attr("d", this.line(this.state.data));
             
@@ -271,7 +258,10 @@ class LineChart extends Component {
     
   }
 
-  dataFromTSV(history){
+  dataFromTSV(dat){
+
+   //  console.log(dat);
+
     let data = [];
     let obj={};
     /**
@@ -280,10 +270,15 @@ class LineChart extends Component {
       obj[ moment(new Date(history[x][0])).format("l") ] = x;
     };
     **/
-    for(let x=history.length-1; x>=0; x--){
-      data.push({close: parseFloat(history[x][4]), date:  new Date(history[x][0]) });
-      obj[ moment(new Date(history[x][0])).format("l") ] = x;
+    for(let x=dat.length-1; x>=0; x--){
+      data.push({close: parseFloat(dat[x][4]), date:  new Date(dat[x][0]) });
+      obj[ moment(new Date(dat[x][0])).format("l") ] = x;
     };
+
+
+
+
+
     this.x.domain(extent(data, (d)=> d.date) );
     this.y.domain([0, max(data, (d)=> (d.close) )]);
     this.x2.domain(extent(data, (d)=> d.date) );
