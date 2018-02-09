@@ -32,9 +32,7 @@ class API {
 		})
 		.then((response) => {return response.json()} )
 		.then((data)=> {
-		 // console.log(data.autocorrdata);
 		 Actions.updateAutocorrelation(data.autocorrdata);
-
 		})
 		.catch((err)=> {console.log(err)});
 	}
@@ -46,9 +44,6 @@ class API {
 			})
 			.then((response)=> {return response.json()})
 			.then((data)=> {
-				// return data;
-				//console.log('api utilities');
-				// console.log(data);
 				Actions.updateHistoricalData(data);
 			})
 			.then((err)=> {console.log(err)})

@@ -19,8 +19,14 @@ class BitcoinInfo {
 	}
 
   setAutocorrelation(item) {
-    this.autocorrelation = item;
-    console.log(this.autocorrelation);
+
+    let data=[];
+
+    for(let x=0; x<item.length; x++){
+        data.push({autocorr: item[x], tau:  x });
+    };
+
+    this.autocorrelation = data;
   }
 
 
@@ -41,6 +47,9 @@ var GeneralStore = objectAssign({}, EventEmitter.prototype, {
   },
   getHistory: function(){
     return Bitcoin.history;
+  },
+  getAutoCorrelation: function(){
+    return Bitcoin.autocorrelation;
   }
 
 });
@@ -53,9 +62,8 @@ AppDispatcher.register(function(payload){
       GeneralStore.emitChange(CHANGE_EVENT);
       break;
     case appConstants.PRICE_AUTOCORR:
-      // console.log(action.data);
       Bitcoin.setAutocorrelation(action.data);
-      // GeneralStore.emitChange(CHANGE_EVENT);
+      GeneralStore.emitChange(CHANGE_EVENT);
       break;
     default:
       return true;

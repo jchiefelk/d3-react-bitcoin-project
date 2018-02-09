@@ -39917,6 +39917,10 @@ var LineChart = function (_Component) {
         _this.y = (0, _d3Scale.scaleLinear)().range([elementHeight * 0.8 - _this.margin.top - _this.margin.bottom, 0]);
         _this.x2 = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
         _this.y2 = (0, _d3Scale.scaleLinear)().range([150 - _this.margin.top - _this.margin.bottom, 0]);
+
+        _this.xcorr = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
+        _this.ycorr = (0, _d3Scale.scaleLinear)().range([elementHeight * 0.8 - _this.margin.top - _this.margin.bottom, 0]);
+
         _this.elementWidth = elementWidth;
         _this.elementHeight = elementHeight;
 
@@ -39932,7 +39936,8 @@ var LineChart = function (_Component) {
             width: _this.props.elementWidth,
             height: _this.props.elementHeight,
             data: null,
-            componentUpdated: false
+            componentUpdated: false,
+            corrdata: null
         };
         return _this;
     }
@@ -39940,11 +39945,11 @@ var LineChart = function (_Component) {
     _createClass(LineChart, [{
         key: 'componentDidMount',
         value: function componentDidMount() {
+            API.getHistoricalData();
             window.addEventListener("resize", this.updateDimensions.bind(this));
             (0, _d3Selection.select)('.overlay').on("mousemove", this.mouseMove);
             (0, _d3Selection.select)('.brush').on("brush end", this.brushed);
             GeneralStore.addChangeListener(this._onChange.bind(this));
-            API.getHistoricalData();
         }
     }, {
         key: 'componentWillUnmount',
@@ -39955,7 +39960,26 @@ var LineChart = function (_Component) {
     }, {
         key: '_onChange',
         value: function _onChange() {
-            this.dataFromTSV(GeneralStore.getHistory());
+
+            if (this.state.data != null) {
+                // console.log(GeneralStore.getAutoCorrelation());
+                var data = GeneralStore.getAutoCorrelation();
+                this.xcorr.domain((0, _d3Array.extent)(data, function (d) {
+                    return d.tau;
+                }));
+                this.ycorr.domain([0, (0, _d3Array.max)(data, function (d) {
+                    return d.autocorr;
+                })]);
+                /**
+                this.setState({
+                  autocorr: data
+                });
+                ***/
+            }
+
+            if (this.state.data == null) {
+                this.dataFromTSV(GeneralStore.getHistory());
+            }
         }
     }, {
         key: 'updateDimensions',
@@ -39976,6 +40000,16 @@ var LineChart = function (_Component) {
             (0, _d3Selection.select)(this.refs.y).call(this.yAxis).on('resize', this.resize);
         }
     }, {
+        key: 'drawXAxisCorr',
+        value: function drawXAxisCorr() {
+            (0, _d3Selection.select)(this.refs.xcorr).call(this.xAxisCorr).on('resize', this.resize);
+        }
+    }, {
+        key: 'drawYAxisCorr',
+        value: function drawYAxisCorr() {
+            (0, _d3Selection.select)(this.refs.ycorr).call(this.yAxisCorr).on('resize', this.resize);
+        }
+    }, {
         key: 'drawXAxis2',
         value: function drawXAxis2() {
             (0, _d3Selection.select)(this.refs.x2).call(this.xAxis2);
@@ -39991,18 +40025,18 @@ var LineChart = function (_Component) {
             return _react2.default.createElement('path', { className: 'line', d: this.line(this.state.data) });
         }
     }, {
+        key: 'lineCorrPath',
+        value: function lineCorrPath() {
+            return _react2.default.createElement('path', { className: 'corrline', d: this.lineCorr(this.state.corrdata) });
+        }
+    }, {
         key: 'autoCorrelation',
         value: function autoCorrelation(d) {
-            //console.log('testing testing');
             API.getCorrelationData(d);
         }
     }, {
         key: 'drawBrush',
         value: function drawBrush() {
-            // console.log(this.state.lookup["Sun Jul 24 2016 18:00:00 GMT-0600 (MDT)"] );
-
-            // console.log(this.state.lookup);
-
 
             (0, _d3Selection.select)(this.refs.y2).call(this.brusherX).call(this.brusherX.move, this.x2.range());
         }
@@ -40059,34 +40093,30 @@ var LineChart = function (_Component) {
 
             var data = [];
             var obj = {};
-            /**
-            for(let x=history.length-1; x>=0; x--){
-              data.push({close: parseFloat(history[x][4]), date:  new Date(history[x][0]) });
-              obj[ moment(new Date(history[x][0])).format("l") ] = x;
-            };
-            **/
             for (var x = dat.length - 1; x >= 0; x--) {
                 data.push({ close: parseFloat(dat[x][4]), date: new Date(dat[x][0]) });
                 obj[(0, _moment2.default)(new Date(dat[x][0])).format("l")] = x;
             };
-            // API.getCorrelationData(data);
+
             this.x.domain((0, _d3Array.extent)(data, function (d) {
                 return d.date;
             }));
             this.y.domain([0, (0, _d3Array.max)(data, function (d) {
                 return d.close;
             })]);
+
             this.x2.domain((0, _d3Array.extent)(data, function (d) {
                 return d.date;
             }));
             this.y2.domain([0, (0, _d3Array.max)(data, function (d) {
                 return d.close;
             })]);
+
             this.setState({
                 data: data,
                 lookup: obj
             });
-            API.getCorrelationData(data);
+            //  API.getCorrelationData(data);
         }
     }, {
         key: 'render',
@@ -40096,6 +40126,9 @@ var LineChart = function (_Component) {
             // Need to update X & Y Axis
             // Need to update draw circile, and text
             var brushHeight = this.state.height * 0.18;
+
+            /**
+             **/
 
             return _react2.default.createElement(
                 'div',
@@ -40124,6 +40157,21 @@ var LineChart = function (_Component) {
                             this.state.data ? this.drawText() : null
                         ),
                         this.state.data ? this.drawRect() : null
+                    ),
+                    _react2.default.createElement(
+                        'g',
+                        { transform: 'translate(' + this.margin.left + ', ' + this.margin.top + ')' },
+                        this.state.corrdata ? this.lineCorrPath() : null,
+                        _react2.default.createElement(
+                            'g',
+                            { ref: 'corrx', className: 'x axis', transform: 'translate(0, ' + (this.state.height - this.margin.top - this.margin.bottom) + ')' },
+                            this.state.corrdata ? this.drawXAxisCorr() : null
+                        ),
+                        _react2.default.createElement(
+                            'g',
+                            { ref: 'corry', className: 'y axis' },
+                            this.state.corrdata ? this.drawYAxisCorr() : null
+                        )
                     )
                 ),
                 _react2.default.createElement(
@@ -40165,30 +40213,44 @@ var LineChart = function (_Component) {
             return (0, _d3Axis.axisLeft)(this.y).ticks(5);
         }
     }, {
+        key: 'xAxisCorr',
+        get: function get() {
+            return (0, _d3Axis.axisBottom)(this.x).ticks(5);
+        }
+    }, {
+        key: 'yAxisCorr',
+        get: function get() {
+            return (0, _d3Axis.axisLeft)(this.y).ticks(5);
+        }
+    }, {
         key: 'resize',
         get: function get() {
             this.x = (0, _d3Scale.scaleTime)().range([0, this.state.width - this.margin.left - this.margin.right]);
             this.y = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.8 - this.margin.top - this.margin.bottom, 0]);
-            this.x2 = (0, _d3Scale.scaleTime)().range([0, this.state.width - this.margin.left - this.margin.right]);
-            this.y2 = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.18 - this.margin.top - this.margin.bottom, 0]);
             this.x.domain((0, _d3Array.extent)(this.state.data, function (d) {
                 return d.date;
             }));
             this.y.domain([0, (0, _d3Array.max)(this.state.data, function (d) {
                 return d.close;
             })]);
+
+            this.x2 = (0, _d3Scale.scaleTime)().range([0, this.state.width - this.margin.left - this.margin.right]);
+            this.y2 = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.18 - this.margin.top - this.margin.bottom, 0]);
             this.x2.domain((0, _d3Array.extent)(this.state.data, function (d) {
                 return d.date;
             }));
             this.y2.domain([0, (0, _d3Array.max)(this.state.data, function (d) {
                 return d.close;
             })]);
-            (0, _d3Selection.select)('.line').attr("d", this.line(this.state.data));
+
             /**
-                select('.main')
-                    .style('height',this.state.width)
-                    .style('width', this.state.height);
+               this.xcorr = scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
+              this.ycorr = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
+              this.xcorr.domain(extent(this.state.corrdata, (d)=> d.tau) );
+              this.ycorr.domain([0, max(this.state.corrdata, (d)=> (d.corr) )]);
             ***/
+
+            (0, _d3Selection.select)('.line').attr("d", this.line(this.state.data));
         }
     }, {
         key: 'xAxis2',
@@ -40212,60 +40274,56 @@ var LineChart = function (_Component) {
             });
         }
     }, {
-        key: 'line2',
+        key: 'lineCorr',
         get: function get() {
             var _this4 = this;
 
             return (0, _d3Shape.line)().x(function (d) {
-                return _this4.x2(d.date);
+                return _this4.xcorr(d.tau);
             }).y(function (d) {
-                return _this4.y2(d.close);
+                return _this4.ycorr(d.corr);
+            });
+        }
+    }, {
+        key: 'line2',
+        get: function get() {
+            var _this5 = this;
+
+            return (0, _d3Shape.line)().x(function (d) {
+                return _this5.x2(d.date);
+            }).y(function (d) {
+                return _this5.y2(d.close);
             });
         }
     }, {
         key: 'brusherX',
         get: function get() {
-            var _this5 = this;
+            var _this6 = this;
 
             return (0, _d3Brush.brushX)().extent([[0, 0], [this.state.width, this.state.height * 0.3]]).on("brush", function () {
                 if (_d3Selection.event.selection) {
-                    var s = _d3Selection.event.selection || _this5.x2.range();
-                    _this5.x.domain(s.map(_this5.x2.invert, _this5.x2));
-                    var d1 = _this5.x.domain()[0];
-                    var d2 = _this5.x.domain()[1];
-                    // console.log( this.state.lookup[moment(d1).format("l")] );
-                    // console.log( this.state.lookup[moment(d1).format("l")] );
-                    // console.log( this.state.lookup[moment(d2).format("l")] );
-                    // console.log(this.state.data[  this.state.lookup[moment(d1).format("l")] ]);
-                    // console.log(this.state.data[  this.state.lookup[moment(d2).format("l")] ]);
+                    var s = _d3Selection.event.selection || _this6.x2.range();
+                    _this6.x.domain(s.map(_this6.x2.invert, _this6.x2));
+                    var d1 = _this6.x.domain()[0];
+                    var d2 = _this6.x.domain()[1];
                     var y_data = [];
                     var price = [];
 
-                    // console.log( this.state.lookup[moment(d1).format("l")] , this.state.lookup[moment(d2).format("l")] );
-                    for (var x = _this5.state.data.length - _this5.state.lookup[(0, _moment2.default)(d1).format("l")] - 1; x <= _this5.state.data.length - _this5.state.lookup[(0, _moment2.default)(d2).format("l")] - 1; x++) {
-                        y_data.push(_this5.state.data[x]);
-                        price.push(parseFloat(_this5.state.data[x].close));
+                    for (var x = _this6.state.data.length - _this6.state.lookup[(0, _moment2.default)(d1).format("l")] - 1; x <= _this6.state.data.length - _this6.state.lookup[(0, _moment2.default)(d2).format("l")] - 1; x++) {
+                        y_data.push(_this6.state.data[x]);
+                        price.push(parseFloat(_this6.state.data[x].close));
                     };
 
-                    _this5.autoCorrelation(y_data);
+                    _this6.autoCorrelation(y_data);
+                    _this6.y = (0, _d3Scale.scaleLinear)().range([_this6.state.height * 0.8 - _this6.margin.top - _this6.margin.bottom, 0]);
+                    _this6.y.domain([0, Math.max.apply(Math, price)]);
+                    (0, _d3Selection.select)('.line').attr("d", _this6.line(_this6.state.data));
 
-                    // console.log( this.state.data.length-this.state.lookup[moment(d1).format("l")]-1);
-                    // console.log(  this.state.data[ this.state.data.length-this.state.lookup[moment(d2).format("l")]-1  ]);
-                    _this5.y = (0, _d3Scale.scaleLinear)().range([_this5.state.height * 0.8 - _this5.margin.top - _this5.margin.bottom, 0]);
-                    // console.log(price);
-                    // console.log( this.state.lookup[moment(d2).format("l")] );
-                    // console.log(max(y_data, (d)=> (d.close) ));
-                    // console.log(Math.max(...price));
-                    // this.y.domain([0, 19000]);
-                    // this.y.domain([0, max(y_data, (d)=> (d.close) )]);
-                    _this5.y.domain([0, Math.max.apply(Math, price)]);
-                    (0, _d3Selection.select)('.line').attr("d", _this5.line(_this5.state.data));
+                    (0, _d3Selection.select)('.overlay').attr("d", _this6.line(_this6.state.data));
 
-                    (0, _d3Selection.select)('.overlay').attr("d", _this5.line(_this5.state.data));
+                    (0, _d3Selection.select)(_this6.refs.x).call(_this6.xAxis);
 
-                    (0, _d3Selection.select)(_this5.refs.x).call(_this5.xAxis);
-
-                    (0, _d3Selection.select)(_this5.refs.y).call(_this5.yAxis);
+                    (0, _d3Selection.select)(_this6.refs.y).call(_this6.yAxis);
                 }
             });
         }
@@ -49766,7 +49824,6 @@ var API = function () {
 			}).then(function (response) {
 				return response.json();
 			}).then(function (data) {
-				// console.log(data.autocorrdata);
 				Actions.updateAutocorrelation(data.autocorrdata);
 			}).catch(function (err) {
 				console.log(err);
@@ -49781,9 +49838,6 @@ var API = function () {
 			}).then(function (response) {
 				return response.json();
 			}).then(function (data) {
-				// return data;
-				//console.log('api utilities');
-				// console.log(data);
 				Actions.updateHistoricalData(data);
 			}).then(function (err) {
 				console.log(err);
@@ -50116,8 +50170,14 @@ var BitcoinInfo = function () {
   }, {
     key: 'setAutocorrelation',
     value: function setAutocorrelation(item) {
-      this.autocorrelation = item;
-      console.log(this.autocorrelation);
+
+      var data = [];
+
+      for (var x = 0; x < item.length; x++) {
+        data.push({ autocorr: item[x], tau: x });
+      };
+
+      this.autocorrelation = data;
     }
   }]);
 
@@ -50140,6 +50200,9 @@ var GeneralStore = objectAssign({}, EventEmitter.prototype, {
   },
   getHistory: function getHistory() {
     return Bitcoin.history;
+  },
+  getAutoCorrelation: function getAutoCorrelation() {
+    return Bitcoin.autocorrelation;
   }
 
 });
@@ -50152,9 +50215,8 @@ AppDispatcher.register(function (payload) {
       GeneralStore.emitChange(CHANGE_EVENT);
       break;
     case appConstants.PRICE_AUTOCORR:
-      // console.log(action.data);
       Bitcoin.setAutocorrelation(action.data);
-      // GeneralStore.emitChange(CHANGE_EVENT);
+      GeneralStore.emitChange(CHANGE_EVENT);
       break;
     default:
       return true;
