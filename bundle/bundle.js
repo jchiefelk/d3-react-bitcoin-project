@@ -39912,7 +39912,7 @@ var LineChart = function (_Component) {
         var elementWidth = props.elementWidth,
             elementHeight = props.elementHeight;
 
-        _this.margin = { top: 30, right: 20, bottom: 30, left: 50 };
+        _this.margin = { top: 5, right: 20, bottom: 30, left: 50 };
         _this.x = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
         _this.y = (0, _d3Scale.scaleLinear)().range([elementHeight * 0.8 - _this.margin.top - _this.margin.bottom, 0]);
         _this.x2 = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
@@ -39989,9 +39989,12 @@ var LineChart = function (_Component) {
                 corrdata.push({ autocorr: parseFloat(dat.autocorr[_x].autocorr), tau: parseInt(dat.autocorr[_x].tau) });
             };
 
-            this.xcorr.domain((0, _d3Array.extent)(corrdata, function (d) {
+            //this.xcorr.domain(extent(corrdata, (d)=> d.tau) );
+
+
+            this.xcorr.domain([0, (0, _d3Array.max)(corrdata, function (d) {
                 return d.tau;
-            }));
+            })]);
             this.ycorr.domain([0, (0, _d3Array.max)(corrdata, function (d) {
                 return d.autocorr;
             })]);
@@ -40035,23 +40038,6 @@ var LineChart = function (_Component) {
                 this.dataFromTSV(data);
                 this.setState({ dataUpdated: true });
             }
-
-            // this.dataCorr(GeneralStore.getAutoCorrelation());
-
-            /***
-             if(this.state.corrUpdated==false && GeneralStore.getAutoCorrelation()!=null){
-                  this.setState({corrUpdated: true });
-                  let data = GeneralStore.getAutoCorrelation();
-                  // console.log(data);
-                  // this.xcorr.domain(extent(data, (d)=> d.tau) );
-                  // this.ycorr.domain([0, max(data, (d)=> (d.autocorr) )]);
-             }
-               if(this.state.corrUpdated==null){
-                this.dataFromTSV(GeneralStore.getHistory());
-                this.setState({
-                 });
-             }
-             ***/
         }
     }, {
         key: 'updateDimensions',
@@ -40226,12 +40212,12 @@ var LineChart = function (_Component) {
                         this.state.corrdata ? this.lineCorrPath() : null,
                         _react2.default.createElement(
                             'g',
-                            { ref: 'corrx', className: 'x axis', transform: 'translate(0, ' + (this.state.height - this.margin.top - this.margin.bottom) + ')' },
+                            { ref: 'xcorr', className: 'x axis', transform: 'translate(0, ' + this.state.height * 0.7 + ')' },
                             this.state.corrdata ? this.drawXAxisCorr() : null
                         ),
                         _react2.default.createElement(
                             'g',
-                            { ref: 'corry', className: 'y axis' },
+                            { ref: 'ycorr', className: 'y axis' },
                             this.state.corrdata ? this.drawYAxisCorr() : null
                         )
                     )
@@ -40251,12 +40237,12 @@ var LineChart = function (_Component) {
     }, {
         key: 'xAxisCorr',
         get: function get() {
-            return (0, _d3Axis.axisBottom)(this.x).ticks(5);
+            return (0, _d3Axis.axisBottom)(this.xcorr).ticks(5);
         }
     }, {
         key: 'yAxisCorr',
         get: function get() {
-            return (0, _d3Axis.axisLeft)(this.y).ticks(5);
+            return (0, _d3Axis.axisLeft)(this.ycorr).ticks(5);
         }
     }, {
         key: 'resize',
@@ -41068,7 +41054,7 @@ exports = module.exports = __webpack_require__(266)(undefined);
 
 
 // module
-exports.push([module.i, "  body {\n    font: 10px sans-serif;\n  }\n\n.main {\n\n\n}\n\n.main2 {\n\n\n}\n\n\n  .zoom {\n    cursor: move;\n    fill: none;\n    pointer-events: all;\n  }\n\n\n  .area {\n    fill: steelblue;\n    clip-path: url(#clip);\n  }\n\n  .axis path,\n  .axis line {\n    fill: none;\n    stroke: #000;\n    shape-rendering: crispEdges;\n  }\n\n  .x.axis path {\n    display: none;\n  }\n\n  .line {\n    fill: none;\n    stroke: steelblue;\n    stroke-width: 1.5px;\n  }\n\n  .line2 {\n    fill: none;\n    stroke: steelblue;\n    stroke-width: 0.5px;\n  }\n\n\n  .overlay {\n    fill: none;\n    pointer-events: all;\n  }\n\n  .focus circle {\n    fill: none;\n    stroke: steelblue;\n  }", ""]);
+exports.push([module.i, "  body {\n    font: 10px sans-serif;\n  }\n\n.main {\n\n\n}\n\n.main2 {\n\n\n}\n\n\n  .zoom {\n    cursor: move;\n    fill: none;\n    pointer-events: all;\n  }\n\n\n  .area {\n    fill: steelblue;\n    clip-path: url(#clip);\n  }\n\n  .axis path,\n  .axis line {\n    fill: none;\n    stroke: #000;\n    shape-rendering: crispEdges;\n  }\n\n  .x.axis path {\n    display: none;\n  }\n\n  .line {\n    fill: none;\n    stroke: steelblue;\n    stroke-width: 1.5px;\n  }\n\n  .line2 {\n    fill: none;\n    stroke: steelblue;\n    stroke-width: 0.5px;\n  }\n\n  .corrline {\n    fill: none;\n    stroke: steelblue;\n    stroke-width: 0.5px;\n  }\n\n\n  .overlay {\n    fill: none;\n    pointer-events: all;\n  }\n\n  .focus circle {\n    fill: none;\n    stroke: steelblue;\n  }", ""]);
 
 // exports
 
