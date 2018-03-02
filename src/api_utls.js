@@ -45,6 +45,7 @@ class API {
 			.then((response)=> {return response.json()})
 			.then((data)=> {
 				Actions.updateHistoricalData(data);
+				Actions.updateAutocorrelation(data.autocorrdata);
 			})
 			.then((err)=> {console.log(err)})
 	}

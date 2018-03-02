@@ -39918,12 +39918,11 @@ var LineChart = function (_Component) {
         _this.x2 = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
         _this.y2 = (0, _d3Scale.scaleLinear)().range([150 - _this.margin.top - _this.margin.bottom, 0]);
 
-        _this.xcorr = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
+        _this.xcorr = (0, _d3Scale.scaleLinear)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
         _this.ycorr = (0, _d3Scale.scaleLinear)().range([elementHeight * 0.8 - _this.margin.top - _this.margin.bottom, 0]);
 
         _this.elementWidth = elementWidth;
         _this.elementHeight = elementHeight;
-
         _this.width = 960 - _this.margin.left - _this.margin.right;
         _this.height = 500 - _this.margin.top - _this.margin.bottom;
         _this.parseDate = (0, _d3TimeFormat.timeFormat)("%d-%b-%y").parse;
@@ -39936,7 +39935,8 @@ var LineChart = function (_Component) {
             width: _this.props.elementWidth,
             height: _this.props.elementHeight,
             data: null,
-            componentUpdated: false,
+            dataUpdated: false,
+            corrUpdated: false,
             corrdata: null
         };
         return _this;
@@ -39958,28 +39958,100 @@ var LineChart = function (_Component) {
             GeneralStore.removeChangeListener(this._onChange.bind(this));
         }
     }, {
-        key: '_onChange',
-        value: function _onChange() {
+        key: 'dataFromTSV',
+        value: function dataFromTSV(dat) {
 
-            if (this.state.data != null) {
-                // console.log(GeneralStore.getAutoCorrelation());
-                var data = GeneralStore.getAutoCorrelation();
+            // console.log(dat);
+
+            var data = [];
+            var obj = {};
+            for (var x = dat.price.length - 1; x >= 0; x--) {
+                data.push({ close: parseFloat(dat.price[x][4]), date: new Date(dat.price[x][0]) });
+                obj[(0, _moment2.default)(new Date(dat.price[x][0])).format("l")] = x;
+            };
+
+            this.x.domain((0, _d3Array.extent)(data, function (d) {
+                return d.date;
+            }));
+            this.y.domain([0, (0, _d3Array.max)(data, function (d) {
+                return d.close;
+            })]);
+
+            this.x2.domain((0, _d3Array.extent)(data, function (d) {
+                return d.date;
+            }));
+            this.y2.domain([0, (0, _d3Array.max)(data, function (d) {
+                return d.close;
+            })]);
+
+            var corrdata = [];
+            for (var _x = 0; _x < dat.autocorr.length; _x++) {
+                corrdata.push({ autocorr: parseFloat(dat.autocorr[_x].autocorr), tau: parseInt(dat.autocorr[_x].tau) });
+            };
+
+            this.xcorr.domain((0, _d3Array.extent)(corrdata, function (d) {
+                return d.tau;
+            }));
+            this.ycorr.domain([0, (0, _d3Array.max)(corrdata, function (d) {
+                return d.autocorr;
+            })]);
+
+            this.setState({
+                data: data,
+                lookup: obj,
+                dataUpdated: false,
+                corrdata: corrdata
+            });
+        }
+    }, {
+        key: 'dataCorr',
+        value: function dataCorr(dat) {
+
+            if (dat != undefined) {
+                var data = [];
+                for (var x = 0; x < dat.length; x++) {
+                    data.push({ autocorr: dat[x].autocorr, tau: dat[x].tau });
+                };
                 this.xcorr.domain((0, _d3Array.extent)(data, function (d) {
                     return d.tau;
                 }));
                 this.ycorr.domain([0, (0, _d3Array.max)(data, function (d) {
                     return d.autocorr;
                 })]);
-                /**
-                this.setState({
-                  autocorr: data
-                });
-                ***/
+                this.setState({ corrdata: data });
+            }
+        }
+    }, {
+        key: '_onChange',
+        value: function _onChange() {
+
+            if (this.state.dataUpdated == false && GeneralStore.getAutoCorrelation() != null) {
+                //  console.log(GeneralStore.getAutoCorrelation());
+
+                var data = {
+                    price: GeneralStore.getHistory(),
+                    autocorr: GeneralStore.getAutoCorrelation()
+                };
+                this.dataFromTSV(data);
+                this.setState({ dataUpdated: true });
             }
 
-            if (this.state.data == null) {
+            // this.dataCorr(GeneralStore.getAutoCorrelation());
+
+            /***
+             if(this.state.corrUpdated==false && GeneralStore.getAutoCorrelation()!=null){
+                  this.setState({corrUpdated: true });
+                  let data = GeneralStore.getAutoCorrelation();
+                  // console.log(data);
+                  // this.xcorr.domain(extent(data, (d)=> d.tau) );
+                  // this.ycorr.domain([0, max(data, (d)=> (d.autocorr) )]);
+             }
+               if(this.state.corrUpdated==null){
                 this.dataFromTSV(GeneralStore.getHistory());
-            }
+                this.setState({
+                 });
+             }
+             ***/
         }
     }, {
         key: 'updateDimensions',
@@ -40073,50 +40145,13 @@ var LineChart = function (_Component) {
     }, {
         key: 'mouseMove',
         value: function mouseMove(e) {
-            // console.log('Mouse move');
-            // console.log(d3.mouse().event);
             var overlay = (0, _d3Selection.select)('.overlay').node();
-            //console.log(clientPoint(e.target, e)[0]);
-            // let x0 = this.x.invert(d3.mouse(overlay));
             var x0 = this.x.invert((0, _d3Selection.clientPoint)(e.target, e)[0]);
             var i = this.bisectDate(this.state.data, x0, 1);
             var d0 = this.state.data[i - 1];
             var d1 = this.state.data[i];
             var d = x0 - d0.date > d1.date - x0 ? d1 : d0;
             (0, _d3Selection.select)(".focus").attr("transform", "translate(" + this.x(d.date) + "," + this.y(d.close) + ")").select("text").text(d.close);
-        }
-    }, {
-        key: 'dataFromTSV',
-        value: function dataFromTSV(dat) {
-
-            //  console.log(dat);
-
-            var data = [];
-            var obj = {};
-            for (var x = dat.length - 1; x >= 0; x--) {
-                data.push({ close: parseFloat(dat[x][4]), date: new Date(dat[x][0]) });
-                obj[(0, _moment2.default)(new Date(dat[x][0])).format("l")] = x;
-            };
-
-            this.x.domain((0, _d3Array.extent)(data, function (d) {
-                return d.date;
-            }));
-            this.y.domain([0, (0, _d3Array.max)(data, function (d) {
-                return d.close;
-            })]);
-
-            this.x2.domain((0, _d3Array.extent)(data, function (d) {
-                return d.date;
-            }));
-            this.y2.domain([0, (0, _d3Array.max)(data, function (d) {
-                return d.close;
-            })]);
-
-            this.setState({
-                data: data,
-                lookup: obj
-            });
-            //  API.getCorrelationData(data);
         }
     }, {
         key: 'render',
@@ -40126,9 +40161,6 @@ var LineChart = function (_Component) {
             // Need to update X & Y Axis
             // Need to update draw circile, and text
             var brushHeight = this.state.height * 0.18;
-
-            /**
-             **/
 
             return _react2.default.createElement(
                 'div',
@@ -40157,21 +40189,6 @@ var LineChart = function (_Component) {
                             this.state.data ? this.drawText() : null
                         ),
                         this.state.data ? this.drawRect() : null
-                    ),
-                    _react2.default.createElement(
-                        'g',
-                        { transform: 'translate(' + this.margin.left + ', ' + this.margin.top + ')' },
-                        this.state.corrdata ? this.lineCorrPath() : null,
-                        _react2.default.createElement(
-                            'g',
-                            { ref: 'corrx', className: 'x axis', transform: 'translate(0, ' + (this.state.height - this.margin.top - this.margin.bottom) + ')' },
-                            this.state.corrdata ? this.drawXAxisCorr() : null
-                        ),
-                        _react2.default.createElement(
-                            'g',
-                            { ref: 'corry', className: 'y axis' },
-                            this.state.corrdata ? this.drawYAxisCorr() : null
-                        )
                     )
                 ),
                 _react2.default.createElement(
@@ -40197,6 +40214,25 @@ var LineChart = function (_Component) {
                             'g',
                             { className: 'brush' },
                             this.state.data ? this.drawBrush() : null
+                        )
+                    )
+                ),
+                _react2.default.createElement(
+                    'svg',
+                    { width: this.state.width, height: this.state.height, className: 'main2' },
+                    _react2.default.createElement(
+                        'g',
+                        { transform: 'translate(' + this.margin.left + ', ' + this.margin.top + ')' },
+                        this.state.corrdata ? this.lineCorrPath() : null,
+                        _react2.default.createElement(
+                            'g',
+                            { ref: 'corrx', className: 'x axis', transform: 'translate(0, ' + (this.state.height - this.margin.top - this.margin.bottom) + ')' },
+                            this.state.corrdata ? this.drawXAxisCorr() : null
+                        ),
+                        _react2.default.createElement(
+                            'g',
+                            { ref: 'corry', className: 'y axis' },
+                            this.state.corrdata ? this.drawYAxisCorr() : null
                         )
                     )
                 )
@@ -40233,7 +40269,6 @@ var LineChart = function (_Component) {
             this.y.domain([0, (0, _d3Array.max)(this.state.data, function (d) {
                 return d.close;
             })]);
-
             this.x2 = (0, _d3Scale.scaleTime)().range([0, this.state.width - this.margin.left - this.margin.right]);
             this.y2 = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.18 - this.margin.top - this.margin.bottom, 0]);
             this.x2.domain((0, _d3Array.extent)(this.state.data, function (d) {
@@ -40243,14 +40278,19 @@ var LineChart = function (_Component) {
                 return d.close;
             })]);
 
-            /**
-               this.xcorr = scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
-              this.ycorr = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
-              this.xcorr.domain(extent(this.state.corrdata, (d)=> d.tau) );
-              this.ycorr.domain([0, max(this.state.corrdata, (d)=> (d.corr) )]);
-            ***/
+            this.xcorr = (0, _d3Scale.scaleLinear)().range([0, this.state.width - this.margin.left - this.margin.right]);
+            this.ycorr = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.8 - this.margin.top - this.margin.bottom, 0]);
+
+            this.xcorr.domain((0, _d3Array.extent)(this.state.corrdata, function (d) {
+                return d.tau;
+            }));
+            this.ycorr.domain([0, (0, _d3Array.max)(this.state.corrdata, function (d) {
+                return d.autocorr;
+            })]);
 
             (0, _d3Selection.select)('.line').attr("d", this.line(this.state.data));
+
+            (0, _d3Selection.select)('.corrline').attr("d", this.lineCorr(this.state.corrdata));
         }
     }, {
         key: 'xAxis2',
@@ -40281,7 +40321,7 @@ var LineChart = function (_Component) {
             return (0, _d3Shape.line)().x(function (d) {
                 return _this4.xcorr(d.tau);
             }).y(function (d) {
-                return _this4.ycorr(d.corr);
+                return _this4.ycorr(d.autocorr);
             });
         }
     }, {
@@ -40308,13 +40348,12 @@ var LineChart = function (_Component) {
                     var d2 = _this6.x.domain()[1];
                     var y_data = [];
                     var price = [];
-
                     for (var x = _this6.state.data.length - _this6.state.lookup[(0, _moment2.default)(d1).format("l")] - 1; x <= _this6.state.data.length - _this6.state.lookup[(0, _moment2.default)(d2).format("l")] - 1; x++) {
                         y_data.push(_this6.state.data[x]);
                         price.push(parseFloat(_this6.state.data[x].close));
                     };
 
-                    _this6.autoCorrelation(y_data);
+                    // this.autoCorrelation(y_data);
                     _this6.y = (0, _d3Scale.scaleLinear)().range([_this6.state.height * 0.8 - _this6.margin.top - _this6.margin.bottom, 0]);
                     _this6.y.domain([0, Math.max.apply(Math, price)]);
                     (0, _d3Selection.select)('.line').attr("d", _this6.line(_this6.state.data));
@@ -49839,6 +49878,7 @@ var API = function () {
 				return response.json();
 			}).then(function (data) {
 				Actions.updateHistoricalData(data);
+				Actions.updateAutocorrelation(data.autocorrdata);
 			}).then(function (err) {
 				console.log(err);
 			});
@@ -50164,7 +50204,6 @@ var BitcoinInfo = function () {
   _createClass(BitcoinInfo, [{
     key: 'setHistory',
     value: function setHistory(item) {
-
       this.history = item;
     }
   }, {
@@ -50172,11 +50211,9 @@ var BitcoinInfo = function () {
     value: function setAutocorrelation(item) {
 
       var data = [];
-
       for (var x = 0; x < item.length; x++) {
         data.push({ autocorr: item[x], tau: x });
       };
-
       this.autocorrelation = data;
     }
   }]);

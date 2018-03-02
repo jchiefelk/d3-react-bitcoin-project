@@ -64,16 +64,33 @@ app.get('/api', function(req,res){
 ***/
 
 app.get('/history', function(req,res){
+
+	let historicalprice = null;
+
 	fetch('https://www.quandl.com/api/v3/datasets/BCHARTS/BITSTAMPUSD.json?api_key=oaWPkjrfz_aQmyPmE-WT',{
       method: 'get',
       mode: 'cors'
     })
     .then((response) => typeof response == 'object' ? response.json() : {} )
-    .then((responseJson)=>{
-      // console.log(responseJson);
-      res.json({historical_data: responseJson.dataset.data});
+    .then((responseJson)=> {
+    
+      // res.json({historical_data: responseJson.dataset.data});
+      historicalprice = responseJson.dataset.data;
       // this.dataFromTSV(history_data);
+      return Correlation.quandl_autocorrelation(responseJson.dataset.data);
     })
+ 	.then((results)=>{
+
+ 		// console.log(results); 
+
+		res.json({
+			historical_data: historicalprice,
+			autocorrdata: results
+		}); 
+	})
+
+
+
     .catch((err)=>{
       console.log(err);
       res.json({error: error});

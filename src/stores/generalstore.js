@@ -14,18 +14,17 @@ class BitcoinInfo {
 	}
 
 	setHistory(item){
-
 		this.history = item;
+
+
 	}
 
   setAutocorrelation(item) {
 
     let data=[];
-
     for(let x=0; x<item.length; x++){
         data.push({autocorr: item[x], tau:  x });
     };
-
     this.autocorrelation = data;
   }
 

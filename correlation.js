@@ -77,17 +77,16 @@ Correlation.prototype.gdax_autocorrelation = function(data){
 };
 
 Correlation.prototype.quandl_autocorrelation = function(data){
-	// console.log(data.data.length);
+	
+	// console.log(data);
 
 	let object = {	
 		'close': []
 	};
 
-	for(let x=0;x<data.data.length;x++){
-		object.close.push(data.data[x].close);
+	for(let x=0;x<data.length;x++){
+		object.close.push(data[x][4]);
 	};
-
-
 
 
 	return new Promise(function(resolve,reject){

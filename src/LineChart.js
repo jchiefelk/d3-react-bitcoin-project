@@ -28,8 +28,10 @@ class LineChart extends Component {
       this.y = scaleLinear().range([elementHeight*0.8 - this.margin.top - this.margin.bottom, 0]);
       this.x2 =  scaleTime().range([0, elementWidth - this.margin.left - this.margin.right]);
       this.y2 = scaleLinear().range([150 - this.margin.top - this.margin.bottom, 0]);
-      this.xcorr = scaleTime().range([0, elementWidth - this.margin.left - this.margin.right]);
+    
+      this.xcorr = scaleLinear().range([0, elementWidth - this.margin.left - this.margin.right]);
       this.ycorr = scaleLinear().range([elementHeight*0.8 - this.margin.top - this.margin.bottom, 0]);
+      
       this.elementWidth = elementWidth;
       this.elementHeight = elementHeight;
       this.width = 960 - this.margin.left - this.margin.right;
@@ -44,7 +46,8 @@ class LineChart extends Component {
           width: this.props.elementWidth,
           height: this.props.elementHeight,
           data: null,
-          componentUpdated: false,
+          dataUpdated: false,
+          corrUpdated: false,
           corrdata: null
       };
   }
@@ -62,25 +65,93 @@ class LineChart extends Component {
      window.removeEventListener("resize", this.updateDimensions.bind(this));
      GeneralStore.removeChangeListener(this._onChange.bind(this));
   }
-  
+
+  dataFromTSV(dat){
+
+    // console.log(dat);
+
+    let data = [];
+    let obj={};
+    for(let x=dat.price.length-1; x>=0; x--){
+      data.push({close: parseFloat(dat.price[x][4]), date:  new Date(dat.price[x][0]) });
+      obj[ moment(new Date(dat.price[x][0])).format("l") ] = x;
+    };
+
+    this.x.domain(extent(data, (d)=> d.date) );
+    this.y.domain([0, max(data, (d)=> (d.close) )]);
+    
+    this.x2.domain(extent(data, (d)=> d.date) );
+    this.y2.domain([0, max(data, (d)=> (d.close) )]);
+    
+
+    let corrdata = [];
+    for(let x=0; x<dat.autocorr.length; x++){
+        corrdata.push({autocorr: parseFloat(dat.autocorr[x].autocorr), tau: parseInt(dat.autocorr[x].tau) });
+    };
+
+    this.xcorr.domain(extent(corrdata, (d)=> d.tau) );
+    this.ycorr.domain([0, max(corrdata, (d)=> (d.autocorr) )]);
+
+    this.setState({
+      data: data,
+      lookup: obj,
+      dataUpdated: false,
+      corrdata: corrdata
+    });
+
+
+  }
+
+
+  dataCorr(dat){
+
+
+    if(dat!=undefined){   
+      let data = [];
+      for(let x=0; x<dat.length; x++){
+        data.push({autocorr: dat[x].autocorr, tau: dat[x].tau });
+      };
+      this.xcorr.domain(extent(data, (d)=> d.tau) );
+      this.ycorr.domain([0, max(data, (d)=> (d.autocorr) )]);
+      this.setState({corrdata: data});
+    }
+
+  }
+
+
   _onChange(){
 
-     if(this.state.data!=null){
+
+    if(this.state.dataUpdated==false && GeneralStore.getAutoCorrelation()!=null){
+      //  console.log(GeneralStore.getAutoCorrelation());
+
+        let data = {
+          price: GeneralStore.getHistory(),
+          autocorr: GeneralStore.getAutoCorrelation()
+        };
+        this.dataFromTSV(data);
+        this.setState({dataUpdated: true});
+    }
+        
+    
+      // this.dataCorr(GeneralStore.getAutoCorrelation());
+
+    /***
+     if(this.state.corrUpdated==false && GeneralStore.getAutoCorrelation()!=null){
+          this.setState({corrUpdated: true });
           let data = GeneralStore.getAutoCorrelation();
-          this.xcorr.domain(extent(data, (d)=> d.tau) );
-          this.ycorr.domain([0, max(data, (d)=> (d.autocorr) )]);
-          /**
-          this.setState({
-            autocorr: data
-          });
-          ***/
+          // console.log(data);
+          // this.xcorr.domain(extent(data, (d)=> d.tau) );
+          // this.ycorr.domain([0, max(data, (d)=> (d.autocorr) )]);
      }
-
-     if(this.state.data==null){
+ 
+     if(this.state.corrUpdated==null){
         this.dataFromTSV(GeneralStore.getHistory());
+        this.setState({
 
+        });
      }
-
+     ***/
   }
 
   updateDimensions() {
@@ -136,23 +207,33 @@ class LineChart extends Component {
     this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
     this.x.domain(extent(this.state.data, (d)=> d.date) );
     this.y.domain([0, max(this.state.data, (d)=> (d.close) )]);
-
-
     this.x2 =  scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
     this.y2 = scaleLinear().range([this.state.height*0.18 - this.margin.top - this.margin.bottom, 0]);
     this.x2.domain(extent(this.state.data, (d)=> d.date) );
     this.y2.domain([0, max(this.state.data, (d)=> (d.close) )]);    
+    
 
-  /**
 
-    this.xcorr = scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
+    this.xcorr = scaleLinear().range([0, this.state.width - this.margin.left - this.margin.right]);
     this.ycorr = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
-    this.xcorr.domain(extent(this.state.corrdata, (d)=> d.tau) );
-    this.ycorr.domain([0, max(this.state.corrdata, (d)=> (d.corr) )]);
-  ***/
+  
 
+    this.xcorr.domain(extent(this.state.corrdata, (d)=> d.tau) );
+    this.ycorr.domain([0, max(this.state.corrdata, (d)=> (d.autocorr) )]);
+  
+    
     select('.line')
             .attr("d", this.line(this.state.data));
+
+
+    select('.corrline')
+            .attr("d", this.lineCorr(this.state.corrdata) )
+
+
+
+
+
+
 
   } 
 
@@ -184,23 +265,20 @@ class LineChart extends Component {
             ));
   }
 
-
-
   get lineCorr(){
+
       return line()
           .x((d)=> (
-            this.xcorr(d.tau)
+              this.xcorr(d.tau)
             ))
           .y((d)=> (
-            this.ycorr(d.corr)
+              this.ycorr(d.autocorr)
             ));
   }
-
 
   linePath(){
      return (<path className="line" d={this.line(this.state.data)}/>);
   }
-
   lineCorrPath(){
      return (<path className="corrline" d={this.lineCorr(this.state.corrdata)}/>);
   }
@@ -228,14 +306,12 @@ class LineChart extends Component {
               let d2 = this.x.domain()[1];
               let y_data = [];
               let price=[];
-              
-
               for(let x=this.state.data.length-this.state.lookup[moment(d1).format("l")]-1; x<=this.state.data.length-this.state.lookup[moment(d2).format("l")]-1; x++){
                   y_data.push(this.state.data[x]);
                   price.push(parseFloat(this.state.data[x].close));
               };
 
-             //this.autoCorrelation(y_data);
+             // this.autoCorrelation(y_data);
              this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
              this.y.domain([0, Math.max(...price) ]);
              select('.line')
@@ -299,28 +375,6 @@ class LineChart extends Component {
     
   }
 
-  dataFromTSV(dat){
-
-    let data = [];
-    let obj={};
-    for(let x=dat.length-1; x>=0; x--){
-      data.push({close: parseFloat(dat[x][4]), date:  new Date(dat[x][0]) });
-      obj[ moment(new Date(dat[x][0])).format("l") ] = x;
-    };
-
-    this.x.domain(extent(data, (d)=> d.date) );
-    this.y.domain([0, max(data, (d)=> (d.close) )]);
-    
-    this.x2.domain(extent(data, (d)=> d.date) );
-    this.y2.domain([0, max(data, (d)=> (d.close) )]);
-    
-    this.setState({
-      data: data,
-      lookup: obj
-    });
-
-  }
-
 
   render() {
     // this.dataFromTSV(GeneralStore.getHistory());
@@ -328,6 +382,8 @@ class LineChart extends Component {
     // Need to update X & Y Axis
     // Need to update draw circile, and text
     let brushHeight = this.state.height*0.18;
+
+
 
 
     return (
@@ -348,19 +404,6 @@ class LineChart extends Component {
               </g>
                 {this.state.data ? this.drawRect() : null}
           </g>
-
-
-          <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
-              {this.state.corrdata ? this.lineCorrPath() : null}
-              <g ref="corrx" className="x axis" transform={`translate(0, ${this.state.height - this.margin.top - this.margin.bottom})`}>
-                  {this.state.corrdata ? this.drawXAxisCorr() : null}
-              </g>
-              <g ref='corry' className="y axis">
-                  {this.state.corrdata ? this.drawYAxisCorr() : null}
-              </g>
-          </g>
-
-
       </svg>
     
 
@@ -379,7 +422,24 @@ class LineChart extends Component {
           </g>
         </svg>
 
+        
+        <svg width={this.state.width} height={this.state.height} className="main2">
+          <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
+              {this.state.corrdata ? this.lineCorrPath() : null}
+              
+              <g ref="corrx" className="x axis" transform={`translate(0, ${this.state.height - this.margin.top - this.margin.bottom})`}>
+                  {this.state.corrdata ? this.drawXAxisCorr() : null}
+              </g>
+              <g ref='corry' className="y axis">
+                  {this.state.corrdata ? this.drawYAxisCorr() : null}
+              </g>
+          
 
+          </g>
+
+
+
+        </svg>
 </div>
 
     );
