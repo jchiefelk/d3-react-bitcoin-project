@@ -4,7 +4,6 @@ class API {
 	
 
 	getCrashAnalysis(){
-
 		return fetch('/api',{
 			method: 'get',
 			mode: 'cors'
@@ -12,15 +11,16 @@ class API {
 		.then((response) => {return response.json()} )
 		.then((data)=> {return data.crashdata})
 		.catch((err)=> {console.log(err)})
-
 	}
 
 	getCorrelationData(data){
-
 		let obj= {
 			data: data
 		};
-	
+
+
+
+
 		return fetch('/api', {
             method: 'post',
             mode: 'cors',
@@ -32,7 +32,8 @@ class API {
 		})
 		.then((response) => {return response.json()} )
 		.then((data)=> {
-		 Actions.updateAutocorrelation(data.autocorrdata);
+			 //console.log(data);
+			 Actions.updateAutocorrelation(data.autocorrdata);
 		})
 		.catch((err)=> {console.log(err)});
 	}
@@ -44,6 +45,8 @@ class API {
 			})
 			.then((response)=> {return response.json()})
 			.then((data)=> {
+
+
 				Actions.updateHistoricalData(data);
 				Actions.updateAutocorrelation(data.autocorrdata);
 			})

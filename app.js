@@ -25,10 +25,10 @@ app.use(express.static(path.resolve(__dirname,'./','bundle')));
 app.post('/api', function(req,res){
 
   	console.log('post post');
-  	// console.log(req.body);
+  	//console.log(req.body);
   	Correlation.quandl_autocorrelation(req.body)
   		.then((results)=>{
-  	
+  			//console.log(results);
 			res.json({autocorrdata: results}); 
 		})
 		.catch((err)=>{
@@ -61,7 +61,7 @@ app.get('/api', function(req,res){
 		next(error);
 	})  
 });
-***/
+**/
 
 app.get('/history', function(req,res){
 
