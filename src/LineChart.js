@@ -25,13 +25,11 @@ class LineChart extends Component {
       let {elementWidth, elementHeight} = props;
       this.margin = {top: 5, right: 20, bottom: 30, left: 50};
       this.x = scaleTime().range([0, elementWidth - this.margin.left - this.margin.right]);
-      this.y = scaleLinear().range([elementHeight*0.8 - this.margin.top - this.margin.bottom, 0]);
+      this.y = scaleLinear().range([elementHeight*0.6 - this.margin.top - this.margin.bottom, 0]);
       this.x2 =  scaleTime().range([0, elementWidth - this.margin.left - this.margin.right]);
       this.y2 = scaleLinear().range([150 - this.margin.top - this.margin.bottom, 0]);
-    
       this.xcorr = scaleLinear().range([0, elementWidth - this.margin.left - this.margin.right]);
-      this.ycorr = scaleLinear().range([elementHeight*0.8 - this.margin.top - this.margin.bottom, 0]);
-      
+      this.ycorr = scaleLinear().range([elementHeight*0.26 - this.margin.top - this.margin.bottom, 0]);
       this.elementWidth = elementWidth;
       this.elementHeight = elementHeight;
       this.width = 960 - this.margin.left - this.margin.right;
@@ -90,8 +88,6 @@ class LineChart extends Component {
     };
 
     //this.xcorr.domain(extent(corrdata, (d)=> d.tau) );
-    
-
     this.xcorr.domain([0, max(corrdata, function(d){ return d.tau; })])
     this.ycorr.domain([0, max(corrdata, (d)=> (d.autocorr) )]);
 
@@ -126,8 +122,7 @@ class LineChart extends Component {
 
 
     if(this.state.dataUpdated==false && GeneralStore.getAutoCorrelation()!=null){
-      //  console.log(GeneralStore.getAutoCorrelation());
-
+      	//  console.log(GeneralStore.getAutoCorrelation());
         let data = {
           price: GeneralStore.getHistory(),
           autocorr: GeneralStore.getAutoCorrelation()
@@ -189,20 +184,15 @@ class LineChart extends Component {
 
   get resize() {
     this.x = scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
-    this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
+    this.y = scaleLinear().range([this.state.height*0.6 - this.margin.top - this.margin.bottom, 0]);
     this.x.domain(extent(this.state.data, (d)=> d.date) );
     this.y.domain([0, max(this.state.data, (d)=> (d.close) )]);
     this.x2 =  scaleTime().range([0, this.state.width - this.margin.left - this.margin.right]);
-    this.y2 = scaleLinear().range([this.state.height*0.18 - this.margin.top - this.margin.bottom, 0]);
+    this.y2 = scaleLinear().range([this.state.height*0.12 - this.margin.top - this.margin.bottom, 0]);
     this.x2.domain(extent(this.state.data, (d)=> d.date) );
     this.y2.domain([0, max(this.state.data, (d)=> (d.close) )]);    
-    
-
-
     this.xcorr = scaleLinear().range([0, this.state.width - this.margin.left - this.margin.right]);
-    this.ycorr = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
-  
-
+    this.ycorr = scaleLinear().range([this.state.height*0.26 - this.margin.top - this.margin.bottom, 0]);
     this.xcorr.domain(extent(this.state.corrdata, (d)=> d.tau) );
     this.ycorr.domain([0, max(this.state.corrdata, (d)=> (d.autocorr) )]);
   
@@ -289,9 +279,8 @@ class LineChart extends Component {
                   y_data.push(this.state.data[x]);
                   price.push(parseFloat(this.state.data[x].close));
               };
-
              // this.autoCorrelation(y_data);
-             this.y = scaleLinear().range([this.state.height*0.8 - this.margin.top - this.margin.bottom, 0]);
+             this.y = scaleLinear().range([this.state.height*0.6 - this.margin.top - this.margin.bottom, 0]);
              this.y.domain([0, Math.max(...price) ]);
              select('.line')
                 .attr("d", this.line(this.state.data));
@@ -309,7 +298,6 @@ class LineChart extends Component {
   }
 
   drawBrush(){
-
       select(this.refs.y2)
         .call(this.brusherX)
         .call(this.brusherX.move, this.x2.range());
@@ -329,7 +317,7 @@ class LineChart extends Component {
   }
 
   drawRect(){
-      return (<rect d={this.line(this.state.data)} className="overlay" width={this.state.width} height={this.state.height*0.8} onMouseMove={(e)=> this.mouseMove(e)}  />)
+      return (<rect d={this.line(this.state.data)} className="overlay" width={this.state.width} height={this.state.height*0.6} onMouseMove={(e)=> this.mouseMove(e)}  />)
   }
 
   mouseOver(){
@@ -351,7 +339,6 @@ class LineChart extends Component {
       .attr("transform", "translate(" + this.x(d.date) + "," + this.y(d.close) + ")")
       .select("text")
       .text(d.close)
-    
   }
 
 
@@ -360,17 +347,15 @@ class LineChart extends Component {
     // Need to update line Path
     // Need to update X & Y Axis
     // Need to update draw circile, and text
-    let brushHeight = this.state.height*0.18;
-
-
+    let brushHeight = this.state.height*0.12;
     return (
       <div>
       
-      <svg width={this.state.width} height={this.state.height*0.8} className="main">
+      <svg width={this.state.width} height={this.state.height*0.6} className="main">
           
           <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
 		          {this.state.data ? this.linePath() : null}
-              <g ref="x" className="x axis" transform={`translate(0, ${this.state.height - this.margin.top - this.margin.bottom})`}>
+              <g ref="x" className="x axis" transform={`translate(0, ${this.state.height*0.6 - this.margin.top - this.margin.bottom})`}>
                   {this.state.data ? this.drawXAxis() : null}
               </g>
               <g ref='y' className="y axis">
@@ -385,7 +370,7 @@ class LineChart extends Component {
       </svg>
     
 
-        <svg width={this.state.width} height={this.state.height*(0.18)} className="main2">
+        <svg width={this.state.width} height={this.state.height*(0.12)} className="main2">
           <g transform={`translate(${this.margin.left}, ${this.margin.top})`} onMouseUp={()=> console.log("Drag on")}>
               {this.state.data ? this.linePath2() : null}
               <g ref="x2" className="x axis" transform={`translate(0, ${brushHeight - this.margin.top - this.margin.bottom})`}>
@@ -401,22 +386,17 @@ class LineChart extends Component {
         </svg>
 
         
-        <svg width={this.state.width} height={this.state.height} className="main2">
+        <svg width={this.state.width} height={this.state.height*0.26} className="main2">
           
-
           <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
-
               {this.state.corrdata ? this.lineCorrPath() : null}
-              
-              <g ref="xcorr" className="x axis" transform={`translate(0, ${this.state.height*0.7})`}>
+              <g ref="xcorr" className="x axis" transform={`translate(0, ${this.state.height*0.22})`}>
                   {this.state.corrdata ? this.drawXAxisCorr() : null}
               </g>
               <g ref='ycorr' className="y axis">
                   {this.state.corrdata ? this.drawYAxisCorr() : null}
               </g>
-          
           </g>
-
 
 
         </svg>

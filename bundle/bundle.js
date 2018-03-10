@@ -39914,13 +39914,11 @@ var LineChart = function (_Component) {
 
         _this.margin = { top: 5, right: 20, bottom: 30, left: 50 };
         _this.x = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
-        _this.y = (0, _d3Scale.scaleLinear)().range([elementHeight * 0.8 - _this.margin.top - _this.margin.bottom, 0]);
+        _this.y = (0, _d3Scale.scaleLinear)().range([elementHeight * 0.6 - _this.margin.top - _this.margin.bottom, 0]);
         _this.x2 = (0, _d3Scale.scaleTime)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
         _this.y2 = (0, _d3Scale.scaleLinear)().range([150 - _this.margin.top - _this.margin.bottom, 0]);
-
         _this.xcorr = (0, _d3Scale.scaleLinear)().range([0, elementWidth - _this.margin.left - _this.margin.right]);
-        _this.ycorr = (0, _d3Scale.scaleLinear)().range([elementHeight * 0.8 - _this.margin.top - _this.margin.bottom, 0]);
-
+        _this.ycorr = (0, _d3Scale.scaleLinear)().range([elementHeight * 0.26 - _this.margin.top - _this.margin.bottom, 0]);
         _this.elementWidth = elementWidth;
         _this.elementHeight = elementHeight;
         _this.width = 960 - _this.margin.left - _this.margin.right;
@@ -39990,8 +39988,6 @@ var LineChart = function (_Component) {
             };
 
             //this.xcorr.domain(extent(corrdata, (d)=> d.tau) );
-
-
             this.xcorr.domain([0, (0, _d3Array.max)(corrdata, function (d) {
                 return d.tau;
             })]);
@@ -40030,7 +40026,6 @@ var LineChart = function (_Component) {
 
             if (this.state.dataUpdated == false && GeneralStore.getAutoCorrelation() != null) {
                 //  console.log(GeneralStore.getAutoCorrelation());
-
                 var data = {
                     price: GeneralStore.getHistory(),
                     autocorr: GeneralStore.getAutoCorrelation()
@@ -40095,7 +40090,6 @@ var LineChart = function (_Component) {
     }, {
         key: 'drawBrush',
         value: function drawBrush() {
-
             (0, _d3Selection.select)(this.refs.y2).call(this.brusherX).call(this.brusherX.move, this.x2.range());
         }
     }, {
@@ -40118,7 +40112,7 @@ var LineChart = function (_Component) {
         value: function drawRect() {
             var _this2 = this;
 
-            return _react2.default.createElement('rect', { d: this.line(this.state.data), className: 'overlay', width: this.state.width, height: this.state.height * 0.8, onMouseMove: function onMouseMove(e) {
+            return _react2.default.createElement('rect', { d: this.line(this.state.data), className: 'overlay', width: this.state.width, height: this.state.height * 0.6, onMouseMove: function onMouseMove(e) {
                     return _this2.mouseMove(e);
                 } });
         }
@@ -40146,21 +40140,20 @@ var LineChart = function (_Component) {
             // Need to update line Path
             // Need to update X & Y Axis
             // Need to update draw circile, and text
-            var brushHeight = this.state.height * 0.18;
-
+            var brushHeight = this.state.height * 0.12;
             return _react2.default.createElement(
                 'div',
                 null,
                 _react2.default.createElement(
                     'svg',
-                    { width: this.state.width, height: this.state.height * 0.8, className: 'main' },
+                    { width: this.state.width, height: this.state.height * 0.6, className: 'main' },
                     _react2.default.createElement(
                         'g',
                         { transform: 'translate(' + this.margin.left + ', ' + this.margin.top + ')' },
                         this.state.data ? this.linePath() : null,
                         _react2.default.createElement(
                             'g',
-                            { ref: 'x', className: 'x axis', transform: 'translate(0, ' + (this.state.height - this.margin.top - this.margin.bottom) + ')' },
+                            { ref: 'x', className: 'x axis', transform: 'translate(0, ' + (this.state.height * 0.6 - this.margin.top - this.margin.bottom) + ')' },
                             this.state.data ? this.drawXAxis() : null
                         ),
                         _react2.default.createElement(
@@ -40179,7 +40172,7 @@ var LineChart = function (_Component) {
                 ),
                 _react2.default.createElement(
                     'svg',
-                    { width: this.state.width, height: this.state.height * 0.18, className: 'main2' },
+                    { width: this.state.width, height: this.state.height * 0.12, className: 'main2' },
                     _react2.default.createElement(
                         'g',
                         { transform: 'translate(' + this.margin.left + ', ' + this.margin.top + ')', onMouseUp: function onMouseUp() {
@@ -40205,14 +40198,14 @@ var LineChart = function (_Component) {
                 ),
                 _react2.default.createElement(
                     'svg',
-                    { width: this.state.width, height: this.state.height, className: 'main2' },
+                    { width: this.state.width, height: this.state.height * 0.26, className: 'main2' },
                     _react2.default.createElement(
                         'g',
                         { transform: 'translate(' + this.margin.left + ', ' + this.margin.top + ')' },
                         this.state.corrdata ? this.lineCorrPath() : null,
                         _react2.default.createElement(
                             'g',
-                            { ref: 'xcorr', className: 'x axis', transform: 'translate(0, ' + this.state.height * 0.7 + ')' },
+                            { ref: 'xcorr', className: 'x axis', transform: 'translate(0, ' + this.state.height * 0.22 + ')' },
                             this.state.corrdata ? this.drawXAxisCorr() : null
                         ),
                         _react2.default.createElement(
@@ -40248,7 +40241,7 @@ var LineChart = function (_Component) {
         key: 'resize',
         get: function get() {
             this.x = (0, _d3Scale.scaleTime)().range([0, this.state.width - this.margin.left - this.margin.right]);
-            this.y = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.8 - this.margin.top - this.margin.bottom, 0]);
+            this.y = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.6 - this.margin.top - this.margin.bottom, 0]);
             this.x.domain((0, _d3Array.extent)(this.state.data, function (d) {
                 return d.date;
             }));
@@ -40256,17 +40249,15 @@ var LineChart = function (_Component) {
                 return d.close;
             })]);
             this.x2 = (0, _d3Scale.scaleTime)().range([0, this.state.width - this.margin.left - this.margin.right]);
-            this.y2 = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.18 - this.margin.top - this.margin.bottom, 0]);
+            this.y2 = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.12 - this.margin.top - this.margin.bottom, 0]);
             this.x2.domain((0, _d3Array.extent)(this.state.data, function (d) {
                 return d.date;
             }));
             this.y2.domain([0, (0, _d3Array.max)(this.state.data, function (d) {
                 return d.close;
             })]);
-
             this.xcorr = (0, _d3Scale.scaleLinear)().range([0, this.state.width - this.margin.left - this.margin.right]);
-            this.ycorr = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.8 - this.margin.top - this.margin.bottom, 0]);
-
+            this.ycorr = (0, _d3Scale.scaleLinear)().range([this.state.height * 0.26 - this.margin.top - this.margin.bottom, 0]);
             this.xcorr.domain((0, _d3Array.extent)(this.state.corrdata, function (d) {
                 return d.tau;
             }));
@@ -40338,9 +40329,8 @@ var LineChart = function (_Component) {
                         y_data.push(_this6.state.data[x]);
                         price.push(parseFloat(_this6.state.data[x].close));
                     };
-
                     // this.autoCorrelation(y_data);
-                    _this6.y = (0, _d3Scale.scaleLinear)().range([_this6.state.height * 0.8 - _this6.margin.top - _this6.margin.bottom, 0]);
+                    _this6.y = (0, _d3Scale.scaleLinear)().range([_this6.state.height * 0.6 - _this6.margin.top - _this6.margin.bottom, 0]);
                     _this6.y.domain([0, Math.max.apply(Math, price)]);
                     (0, _d3Selection.select)('.line').attr("d", _this6.line(_this6.state.data));
 
