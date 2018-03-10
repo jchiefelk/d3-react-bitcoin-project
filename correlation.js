@@ -64,6 +64,8 @@ Correlation.prototype.gdax_autocorrelation = function(data){
 		'close': []
 	};
 
+
+
 	for(let x=0;x<data.length;x++){
 		//console.log(data[x][4]);
 		object.close.push(data[x][4]);
@@ -84,10 +86,19 @@ Correlation.prototype.quandl_autocorrelation = function(data){
 				'close': []
 			};
 
+			// console.log(data.data);
+			/**
 			for(let x=0;x<data.data.length;x++){
 				// object.close.push(data[x][4]); directly from quandl
 				object.close.push(data.data[x].close);
 			};
+			**/
+
+
+
+			for(let x=data.data.length-1; x>=0 ;x--){
+				object.close.push(data.data[x].close);
+			}
 	
 			return new Promise(function(resolve,reject){
 				autocorrelation(object,function(results){

@@ -24,7 +24,6 @@ app.use(express.static(path.resolve(__dirname,'./','bundle')));
 
 app.post('/api', function(req,res){
 
-  	console.log('post post');
   	//console.log(req.body);
   	Correlation.quandl_autocorrelation(req.body)
   		.then((results)=>{

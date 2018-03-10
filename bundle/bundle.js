@@ -49634,36 +49634,16 @@ var AutoCorrelation = function (_Component) {
 		value: function _onChange() {
 
 			if (GeneralStore.getAutoCorrelation() != null) {
-				console.log(GeneralStore.getAutoCorrelation());
 				var data = {
 					autocorr: GeneralStore.getAutoCorrelation()
 				};
 				this.dataFromTSV(data);
 			}
-
-			/*
-      if(this.state.dataUpdated==false && this.state.corrdata!=null){
-      	console.log('not null');
-          let data = {
-            autocorr: GeneralStore.getAutoCorrelation()
-          };
-          this.dataFromTSV(data);
-          this.setState({dataUpdated: true});
-      }
-     
-      if(this.state.dataUpdated==false && GeneralStore.getAutoCorrelation()!=null && this.state.corrdata==null){
-          let data = {
-            autocorr: GeneralStore.getAutoCorrelation()
-          };
-          this.dataFromTSV(data);
-          this.setState({dataUpdated: true});
-      }
-      **/
 		}
 	}, {
 		key: 'dataFromTSV',
 		value: function dataFromTSV(dat) {
-			console.log(dat);
+
 			var corrdata = [];
 			for (var x = 0; x < dat.autocorr.length; x++) {
 				corrdata.push({ autocorr: parseFloat(dat.autocorr[x].autocorr), tau: parseInt(dat.autocorr[x].tau) });
