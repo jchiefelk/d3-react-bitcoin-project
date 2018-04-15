@@ -1,7 +1,6 @@
 import React, {Component} from 'react';
-var API = require('./api_utls');
-var GeneralStore = require('./stores/generalstore');
-import './line-chart.css';
+var API = require('../api_utls');
+var GeneralStore = require('../stores/generalstore');
 import { select, event } from 'd3-selection'
 import { selectAll, sourceEvent, clientPoint} from 'd3-selection';
 import {extent, max, bisector} from 'd3-array'
@@ -43,17 +42,17 @@ export default class AutoCorrelation extends Component {
 
    dataFromTSV(dat){
 
-    let corrdata = [];
-    for(let x=0; x<dat.autocorr.length; x++){
-        corrdata.push({autocorr: parseFloat(dat.autocorr[x].autocorr), tau: parseInt(dat.autocorr[x].tau) });
-    };
-    this.xcorr.domain([0, max(corrdata, function(d){ return d.tau; })])
-    this.ycorr.domain([0, max(corrdata, (d)=> (d.autocorr) )]);
-    this.setState({
-      corrdata: corrdata
-    });
+	    let corrdata = [];
+	    for(let x=0; x<dat.autocorr.length; x++){
+	        corrdata.push({autocorr: parseFloat(dat.autocorr[x].autocorr), tau: parseInt(dat.autocorr[x].tau) });
+	    };
+	    this.xcorr.domain([0, max(corrdata, function(d){ return d.tau; })])
+	    this.ycorr.domain([0, max(corrdata, (d)=> (d.autocorr) )]);
+	    this.setState({
+	      corrdata: corrdata
+	    });
 
-  }
+  	}
 
 	componentDidMount(){
     	window.addEventListener("resize", this.updateDimensions.bind(this));
@@ -119,13 +118,11 @@ export default class AutoCorrelation extends Component {
 	   return (<path className="corrline" d={this.lineCorr(this.state.corrdata)}/>);
 	}
 
-
-
 	render(){
 
 		return(
 			
-		<svg width={this.state.width} height={this.state.height*0.26} className="main2">
+		<svg width={this.state.width} height={this.state.height*0.26}>
 	          <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
 		              {this.state.corrdata ? this.lineCorrPath() : null}
 		              <g ref="xcorr" className="x axis" transform={`translate(0, ${this.state.height*0.22})`}>

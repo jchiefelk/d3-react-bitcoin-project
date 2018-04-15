@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import './line-chart.css';
 import { select, event } from 'd3-selection'
 import { selectAll, sourceEvent, clientPoint} from 'd3-selection';
 import {extent, max, bisector} from 'd3-array'
@@ -12,9 +11,9 @@ import {axisBottom, axisLeft} from 'd3-axis'
 import {brushX, brushY, brush} from 'd3-brush'
 import {zoom, zoomIdentity} from 'd3-zoom'
 import AutoCorrelation from './autocorrelation'
-var API = require('./api_utls');
+var API = require('../api_utls');
 import moment from 'moment';
-var GeneralStore = require('./stores/generalstore');
+var GeneralStore = require('../stores/generalstore');
 
 
 
@@ -72,7 +71,6 @@ class LineChart extends Component {
     this.y.domain([0, max(data, (d)=> (d.close) )]);
     this.x2.domain(extent(data, (d)=> d.date) );
     this.y2.domain([0, max(data, (d)=> (d.close) )]);
-
     this.setState({
       data: data,
       lookup: obj,
@@ -188,9 +186,6 @@ class LineChart extends Component {
                   y_data.push(this.state.data[x]);
                   price.push(parseFloat(this.state.data[x].close));
               };
-
-
-
              this.autoCorrelation(y_data);
              this.y = scaleLinear().range([this.state.height*0.6 - this.margin.top - this.margin.bottom, 0]);
              this.y.domain([0, Math.max(...price) ]);
@@ -232,14 +227,6 @@ class LineChart extends Component {
       return (<rect d={this.line(this.state.data)} className="overlay" width={this.state.width} height={this.state.height*0.6} onMouseMove={(e)=> this.mouseMove(e)}  />)
   }
 
-  mouseOver(){
- 
-  }
-
-  mouseOut(){
-
-  }
-
   mouseMove(e){
     let overlay = select('.overlay').node();
     let x0 = this.x.invert(clientPoint(e.target, e)[0])
@@ -262,7 +249,7 @@ class LineChart extends Component {
     let brushHeight = this.state.height*0.12;
     return (
       <div>
-	      <svg width={this.state.width} height={this.state.height*0.6} className="main">
+	      <svg width={this.state.width} height={this.state.height*0.6}>
 	          <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
 			          {this.state.data ? this.linePath() : null}
 	              <g ref="x" className="x axis" transform={`translate(0, ${this.state.height*0.6 - this.margin.top - this.margin.bottom})`}>
@@ -294,7 +281,7 @@ class LineChart extends Component {
 	          </g>
 	      </svg>
 
-      <AutoCorrelation {...this.props} />
+     
 </div>
 
     );
