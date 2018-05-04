@@ -17,7 +17,7 @@ the comutation of the Price Autocorrelation</p>
 
 <pre>
 node-gyp configure
-bode-gyp build
+node-gyp build
 </pre>
 
 <h3>Running Application Locally</h3>
