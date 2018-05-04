@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
-
-
+import { Link } from 'react-router-dom';
 
 export default class Header extends Component {
 	
@@ -32,26 +31,16 @@ export default class Header extends Component {
                         clicked: false
                 });
         }
-
-
-
     }
 
-
-
     hashClicked(){
-
 		    var x = document.getElementById("myTopnav");
 		    if (x.className === "topnav") {
 		        x.className += " responsive";
 		    } else {
 		        x.className = "topnav";
 		    }
-
-
-
     }
-
 
     handleResize(e){
         this.setState({ windowWidth: window.innerWidth});
@@ -62,28 +51,21 @@ export default class Header extends Component {
             });
         }
     }
-	render(){
 
+	render(){
 		return(
 			<header className="header">
 				<h1>Kaneh Kings</h1>
-
-                <div className="topnav" id="myTopnav">
-          
-
+                <nav className="topnav" id="myTopnav">
           		 	<a href="javascript:void(0);" className="icon" onClick={this.hashClicked.bind(this)}>&#9776;</a>
-            		
             		<div className="headeritems">
-            		 <a href="#">Finance</a>
-
-                     <a href="#">Computers</a>
-        
-                     <a href="#">Science</a>
-                     </div>
-  					
-                </div>
+			            		<Link to="/">Charts</Link>
+			            		<Link to="finance">Finance</Link>
+			                    <Link to="computers">Computers</Link>
+			                    <Link to="science">Science</Link>
+                    </div>
+                </nav>
 			</header>
 		);
 	}
-
 }

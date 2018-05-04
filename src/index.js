@@ -1,10 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import DashBoard from './components/dashboard';
+import Routes from './routes/routes';
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
+
 import './css/line-chart.css';
 import './css/main.css';
 
 ReactDOM.render(
-  <DashBoard  />,
+  	<BrowserRouter>
+		<Routes/>
+	</BrowserRouter>,
   document.getElementById('root')
 );

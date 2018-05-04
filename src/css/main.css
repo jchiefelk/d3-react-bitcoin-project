@@ -12,6 +12,13 @@
 	flex-direction: column; 
 	background-color: transparent;
 }
+
+.charts {
+	margin-top: 2rem;
+}
+
+
+
 .marketpage {
 	display: flex;
 	flex-direction: column;
